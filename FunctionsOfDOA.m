@@ -16,21 +16,35 @@ classdef FunctionsOfDOA
             grid on;
         end
 
-        % Spatial Spectrum Computation
-        function spatial_spectrum = Spatial_Spectrum(~, M, sensor_locations, doa, N, SNR, coef, method, C)
-            n = length(doa);
-
-            s = zeros(n, N);
-            theta = 180 * rand(n, 1);
-            for i = 1:n
-                s(i, :) = exp(1i * 2 * pi * coef * (0:N-1) * cosd(theta(i)));
+        % Source Generate
+        function s = Source_Generate(~, number_of_sources, number_of_snapshots)
+            s = zeros(number_of_sources, number_of_snapshots);
+            theta = 180 * rand(number_of_sources, 1);
+            for i = 1:number_of_sources
+                s(i, :) = exp(1i * pi * (0:number_of_snapshots-1) * cosd(theta(i)));
             end
-            v = (1 / 10^(SNR/10)) * (1/sqrt(2)) * (randn(M, N) + 1i * randn(M, N));
+        end
 
-            A = zeros(M, n);
-            for i = 1:n
+        % Noise Generate
+        function v = Noise_Generate(~, SNR_dB, number_of_sensors, number_of_snapshots)
+            v = (1 / 10^(SNR_dB/10)) * (1/sqrt(2)) * (randn(number_of_sensors, number_of_snapshots) + 1i * randn(number_of_sensors, number_of_snapshots));
+        end
+
+        % Array Manifold
+        function A = Array_Manifold(~, number_of_sensors, number_of_sources, coef, sensor_locations, doa)
+            A = zeros(number_of_sensors, number_of_sources);
+            for i = 1:number_of_sources
                 A(:, i) = exp(1i * 2 * pi * coef * (sensor_locations - 1).' * cosd(doa(i)));
             end
+        end
+
+        % Spatial Spectrum Computation
+        function spatial_spectrum = Spatial_Spectrum(obj, M, sensor_locations, doa, N, SNR, coef, method, C)
+            n = length(doa);
+
+            s = obj.Source_Generate(n, N);
+            v = obj.Noise_Generate(SNR, M, N);
+            A = obj.Array_Manifold(M, n, coef, sensor_locations, doa);
 
             y = C * A * s + v;
 
@@ -52,7 +66,7 @@ classdef FunctionsOfDOA
                         spatial_spectrum(i) = abs(h' * (y * y') * h);
                     end
 
-                else % method == "music"
+                elseif method == "music"
                     [eig_vecs, ~] = eig(Ry);    % eigen decomposition of the covariance matrix
                     G = eig_vecs(:, 1:M-n);     % noise space
 
@@ -60,6 +74,8 @@ classdef FunctionsOfDOA
                         a_ = exp(1i * 2 * pi * coef * (sensor_locations - 1).' * cos(angles(i) * pi / 180));
                         spatial_spectrum(i) = 1/abs(a_' * (G * G') * a_);
                     end
+                else % if method == "kr-music"
+                    spatial_spectrum = obj.KR_MUSIC(Ry, n, sensor_locations, coef);
                 end
             end
 
@@ -96,6 +112,23 @@ classdef FunctionsOfDOA
             title_str = 'Spatial Spectrum - MUSIC (using R_{z1})';
             title(title_str);
             grid on;
+        end
+
+        % KR-MUSIC
+        function spatial_spectrum = KR_MUSIC(obj, Ry, n, sensor_locations, coef)
+            r = Ry(:); % coarray vector
+            [S, ~, ~] = svd(r);
+            G = S(:, n+1:end); % noise space
+
+            angles = 0:0.5:180;
+            spatial_spectrum = zeros(1, length(angles));
+
+            for i = 1:length(angles)
+                a = exp(1i * 2 * pi * coef * (sensor_locations-1).' * cosd(angles(i)));
+                kr_product = obj.khatri_rao(conj(a), a);
+                spatial_spectrum(i) = 1/abs(kr_product' * (G * G') * kr_product);
+            end
+            spatial_spectrum = spatial_spectrum / max(spatial_spectrum);
         end
         
         % Sensor Locations
@@ -178,18 +211,18 @@ classdef FunctionsOfDOA
         end
         
         % Augmented Nested Array 1 Positions
-        function sensor_locations = Augmented_Nested_Array_1_Locations(~, N1, N2, L1)
+        function sensor_locations = Augmented_Nested_Array_1_Locations(obj, N1, N2, L1)
             if L1 == -1
                 L1 = ceil(0.5 * (N1 + 1));
             end
-            temp_locations = Nested_Array_Locations([N1 N2]); % parent nested array
+            temp_locations = obj.Nested_Array_Locations([N1 N2]); % parent nested array
             temp_locations(N1 - L1 + 1:N1) = (N1 + 1) * N2 + temp_locations(N1 - L1 + 1:N1) - temp_locations(N1 - L1 + 1) + 1;
             sensor_locations = sort(temp_locations);
         end
         
         % Augmented Nested Array 2 Positions
-        function sensor_locations = Augmented_Nested_Array_2_Locations(~, N1, N2)
-            temp_locations = Nested_Array_Locations([N1 N2]); % parent nested array
+        function sensor_locations = Augmented_Nested_Array_2_Locations(obj, N1, N2)
+            temp_locations = obj.Nested_Array_Locations([N1 N2]); % parent nested array
             temp_locations(3:2:N1) = (N1 + 1) * N2 - (rem(N1, 2) + 1) + temp_locations(3:2:N1);
             sensor_locations = sort(temp_locations);
         end
