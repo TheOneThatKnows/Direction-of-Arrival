@@ -67,15 +67,20 @@ classdef FunctionsOfDOA
                     end
 
                 elseif method == "music"
-                    [eig_vecs, ~] = eig(Ry);    % eigen decomposition of the covariance matrix
-                    G = eig_vecs(:, 1:M-n);     % noise space
+                    spatial_spectrum = obj.MUSIC(n, coef, Ry, sensor_locations);
 
-                    for i = 1:length(angles)
-                        a_ = exp(1i * 2 * pi * coef * (sensor_locations - 1).' * cos(angles(i) * pi / 180));
-                        spatial_spectrum(i) = 1/abs(a_' * (G * G') * a_);
-                    end
-                else % if method == "kr-music"
+                elseif method == "kr-music"
                     spatial_spectrum = obj.KR_MUSIC(Ry, n, sensor_locations, coef);
+
+                else % if method == "ss-music"
+                    z = Ry(:);
+                    [z1, M_v] = obj.Rearrange_According_to_Sensor_Locations(z, sensor_locations);
+                    R_z1 = zeros(M_v);
+                    for i = 1:M_v
+                        z1_i = z1(i:i + M_v - 1);
+                        R_z1 = R_z1 + (1 / M_v) * (z1_i * z1_i');
+                    end
+                    spatial_spectrum = obj.MUSIC(n, coef, R_z1, 1);
                 end
             end
 
@@ -91,27 +96,24 @@ classdef FunctionsOfDOA
 
         % MUSIC
         % This function works for a given covariance matrix. I try to use it when I calculate a covariance matrix using spatial smoothing.
-        function spatial_spectrum = MUSIC(~, n, coef, Rz1)
+        function spatial_spectrum = MUSIC(~, n, coef, Rz1, sensor_locations)
             angles = 0:0.5:180;
             spatial_spectrum = zeros(1, length(angles));
 
             M_v = length(Rz1(:, 1));
 
-            [eig_vecs, ~] = eig(Rz1);    % eigen decomposition of the covariance matrix
-            G = eig_vecs(:, 1:M_v-n);     % noise space
+            [eig_vecs, ~] = eig(Rz1);   % eigen decomposition of the covariance matrix
+            G = eig_vecs(:, 1:M_v-n);   % noise space
+
+            if length(sensor_locations) < 2
+                sensor_locations = 1:M_v; % uniform linear array
+            end
 
             for i = 1:length(angles)
-                a_ = exp(1i * 2 * pi * coef * (0:M_v-1).' * cosd(angles(i)));
+                a_ = exp(1i * 2 * pi * coef * (sensor_locations - 1).' * cosd(angles(i)));
                 spatial_spectrum(i) = 1/abs(a_' * (G * G') * a_);
             end
             spatial_spectrum = spatial_spectrum / max(spatial_spectrum);
-
-            figure;
-            plot(angles, 10 * log10(spatial_spectrum));
-            xlabel('phi'); xlim([0 180]);
-            title_str = 'Spatial Spectrum - MUSIC (using R_{z1})';
-            title(title_str);
-            grid on;
         end
 
         % KR-MUSIC
@@ -305,37 +307,29 @@ classdef FunctionsOfDOA
             end
         end
 
-        % Discard Repeating Rows
-        function X2 = Discard_Repeating_Rows(~, X1)
-            X2 = X1(1, :);
-            for i = 2:length(X1(:, 1))
-                temp_X = X2 - ones(length(X2(:, 1)), 1) * X1(i, :);
-                exists = false;
-                for j = 1:length(X2(:, 1))
-                    if round(norm(temp_X(j, :))) == 0
-                        exists = true;
-                        break
+        % Sort and Discard Repeating Rows According to Sensor Locations In The Difference Coarray
+        function [X2, M_v] = Rearrange_According_to_Sensor_Locations(obj, X1, sensor_locations)
+            sensor_placement = obj.Sensor_Placement(sensor_locations);
+            diff_coarray = obj.Diff_Coarray(sensor_placement);
+            uDOF = obj.Uniform_Degrees_Of_Freedom(diff_coarray);
+            M_v = obj.One_Side_Uniform_Degrees_Of_Freedom(diff_coarray) + 1;
+            M = length(sensor_locations);
+
+            [~, c] = size(X1);
+            X2 = zeros(uDOF, c);
+            diff_vector = zeros(uDOF, 1);
+            for i = 1:length(sensor_locations)
+                for j = 1:length(sensor_locations)
+                    diff = -sensor_locations(i) + sensor_locations(j);
+                    idx2 = M_v + diff;
+                    if (idx2 < 1 || idx2 > uDOF) || diff_vector(idx2) == 1
+                        continue
                     end
-                end
-                if ~exists
-                    X2 = [X2; X1(i, :)];
-                end
-            end
-        end
 
-        % Sort According to Sensor Locations In The Difference Coarray
-        function X2 = Sort_According_to_Sensor_Locations(obj, X1)
-            [M, N] = size(X1);
-            X2 = zeros(M, N);
-            middle_idx = 0.5 * (M+1);
-            X2(middle_idx, :) = X1(1, :);
-            X1 = X1(2:end, :);
-            for i = 1:0.5 * (M-1)
-                X2(middle_idx + i, :) = X1(i, :);
-                X2(middle_idx - i, :) = conj(X1(i, :));
-
-                X1(1, :) = conj(X1(1, :));
-                X1 = obj.Discard_Repeating_Rows(X1);
+                    idx1 = (i-1) * M + j;
+                    X2(idx2, :) = X1(idx1, :);
+                    diff_vector(idx2) = 1;
+                end
             end
         end
     end
