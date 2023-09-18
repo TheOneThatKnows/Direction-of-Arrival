@@ -45,3 +45,4 @@ DOA.Spatial_Spectrum(M, sensor_locations, doa, snapshots, SNR_dB, coef, "capon",
 DOA.Spatial_Spectrum(M, sensor_locations, doa, snapshots, SNR_dB, coef, "music", C);
 DOA.Spatial_Spectrum(M, sensor_locations, doa, snapshots, SNR_dB, coef, "kr-music", C);
 DOA.Spatial_Spectrum(M, sensor_locations, doa, snapshots, SNR_dB, coef, "ss-music", C);
+DOA.Spatial_Spectrum(M, sensor_locations, doa, snapshots, SNR_dB, coef, "ss-capon", C);

@@ -60,7 +60,11 @@ classdef FunctionsOfDOA
                 Ry = (1 / N) * (y * y');
 
                 if method == "capon"
-                    spatial_spectrum = obj.Capon(coef, Ry, sensor_locations);
+                    for i = 1:length(angles)
+                        a_ = exp(1i * 2 * pi * coef * (sensor_locations - 1).' * cosd(angles(i)));
+                        h = ((eye(M)/(Ry)) * a_) / (a_' * (eye(M)/(Ry)) * a_);
+                        spatial_spectrum(i) = abs(h' * (y * y') * h);
+                    end
 
                 elseif method == "music"
                     spatial_spectrum = obj.MUSIC(n, coef, Ry, sensor_locations);
@@ -68,7 +72,7 @@ classdef FunctionsOfDOA
                 elseif method == "kr-music"
                     spatial_spectrum = obj.KR_MUSIC(Ry, n, sensor_locations, coef);
 
-                else % spatial smoothing methods
+                else % if method == "ss-music"
                     z = Ry(:);
                     [z1, M_v] = obj.Rearrange_According_to_Sensor_Locations(z, sensor_locations);
                     R_z1 = zeros(M_v);
@@ -76,12 +80,7 @@ classdef FunctionsOfDOA
                         z1_i = z1(i:i + M_v - 1);
                         R_z1 = R_z1 + (1 / M_v) * (z1_i * z1_i');
                     end
-
-                    if method == "ss-music"
-                        spatial_spectrum = obj.MUSIC(n, coef, R_z1, 1);
-                    else % if method == "ss-capon"
-                        spatial_spectrum = obj.Capon(coef, R_z1, 1);
-                    end
+                    spatial_spectrum = obj.MUSIC(n, coef, R_z1, 1);
                 end
             end
 
@@ -96,20 +95,14 @@ classdef FunctionsOfDOA
         end
 
         % Capon
-        function spatial_spectrum = Capon(~, coef, Ry, sensor_locations)
-            angles = 0:0.5:180;
-            spatial_spectrum = zeros(1, length(angles));
-
-            M = length(Ry(:, 1));
-
-            if length(sensor_locations) < 2
-                sensor_locations = 1:M;
+        function spatial_spectrum = Capon(~, n, coef, Ry, sensor_locations)
+            if sensor_locations == 1
+                sensor_locations = 1:length(Ry(:, 1))
             end
-
             for i = 1:length(angles)
                 a_ = exp(1i * 2 * pi * coef * (sensor_locations - 1).' * cosd(angles(i)));
                 h = ((eye(M)/(Ry)) * a_) / (a_' * (eye(M)/(Ry)) * a_);
-                spatial_spectrum(i) = abs(h' * Ry * h);
+                spatial_spectrum(i) = abs(h' * (y * y') * h);
             end
         end
 
