@@ -6,17 +6,22 @@ coef = 0.5; % unit distance between sensors divided by the wavelength of the sig
 
 %% Start
 
-input = [0 3 3];        % [nested_array M1 M2]
+% input = [0 3 3];      % [nested_array M1 M2]
 % input = [1 2 3];      % [coprime_array M1 M2]
 % input = [2 4 3];      % [super_nested_array M1 M2]
 % input = [3 4 4 3];    % [augmented_nested_array_1 M1 M2 L1]
 % input = [4 7 4];      % [augmented_nested_array_2 M1 M2]
-% input = [5 3 3];        % [nested_array_v2 M1 M2]
+% input = [5 3 3];      % [nested_array_v2 M1 M2]
+% input = [6 2 3 3];    % [sparse_nested_array_with_coprime_displacement_1 N M L]
+% input = [7 1 2 3];    % [sparse_nested_array_with_coprime_displacement_2 N M L]
 
-if input(1) ~= 1
-    M = sum(input(2:3))                                     % # of sensors
-else
+% M: # of sensors
+if input(1) == 1 % coprime array
     M = 2 * input(2) - 1 + input(3)
+elseif abs(6.5 - input(1)) < 1 % sparse nested array with coprime displacement
+    M = 2 * input(4);
+else
+    M = sum(input(2:3))
 end
 sensor_locations = DOA.Sensor_Locations(input)                  % sensor locations
 sensor_placement = DOA.Sensor_Placement(sensor_locations)       % sensor places (in order to visualize the array)

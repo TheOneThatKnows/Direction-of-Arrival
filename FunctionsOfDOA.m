@@ -152,6 +152,12 @@ classdef FunctionsOfDOA
 
             elseif input(1) == 5 % nested-array-v2
                 sensor_locations = obj.Nested_Array_v2_Locations(input(2), input(3));
+
+            elseif input(1) == 6 % sparse nested array with coprime displacement 1
+                sensor_locations = obj.SNACD_1_Locations(input(2), input(3), input(4));
+
+            elseif input(1) == 7 % sparse nested array with coprime displacement 2
+                sensor_locations = obj.SNACD_2_Locations(input(2), input(3), input(4));
             end
         end
         
@@ -227,6 +233,22 @@ classdef FunctionsOfDOA
             temp_locations = obj.Nested_Array_Locations([N1 N2]); % parent nested array
             temp_locations(3:2:N1) = (N1 + 1) * N2 - (rem(N1, 2) + 1) + temp_locations(3:2:N1);
             sensor_locations = sort(temp_locations);
+        end
+
+        % Sparse Nested Array with Coprime Displacement 1 Positions
+        function sensor_locations = SNACD_1_Locations(~, N, M, L)
+            subarray1 = (0:M:(L-1)*M) + N;
+            subarray2 = 0:L*M:(L-1)*L*M;
+
+            sensor_locations = sort([subarray1 subarray2]) + 1;
+        end
+
+        % Sparse Nested Array with Coprime Displacement 2 Positions
+        function sensor_locations = SNACD_2_Locations(~, N, M, L)
+            subarray1 = ((1-L)*M:M:0) - N;
+            subarray2 = 0:L*M:(L-1)*L*M;
+
+            sensor_locations = [subarray1 subarray2] + ((L-1) * M + N) + 1;
         end
         
         % Sensor Placement
