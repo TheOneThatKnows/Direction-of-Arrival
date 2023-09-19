@@ -31,7 +31,9 @@ classdef FunctionsOfDOA
         end
 
         % Array Manifold
-        function A = Array_Manifold(~, number_of_sensors, number_of_sources, coef, sensor_locations, doa)
+        function A = Array_Manifold(~, coef, sensor_locations, doa)
+            number_of_sensors = length(sensor_locations);
+            number_of_sources = length(doa);
             A = zeros(number_of_sensors, number_of_sources);
             for i = 1:number_of_sources
                 A(:, i) = exp(1i * 2 * pi * coef * sensor_locations.' * cosd(doa(i)));
@@ -44,7 +46,7 @@ classdef FunctionsOfDOA
 
             s = obj.Source_Generate(n, N);
             v = obj.Noise_Generate(SNR, M, N);
-            A = obj.Array_Manifold(M, n, coef, sensor_locations, doa);
+            A = obj.Array_Manifold(coef, sensor_locations, doa);
 
             y = C * A * s + v;
 
