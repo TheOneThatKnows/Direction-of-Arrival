@@ -34,7 +34,7 @@ classdef FunctionsOfDOA
         function A = Array_Manifold(~, number_of_sensors, number_of_sources, coef, sensor_locations, doa)
             A = zeros(number_of_sensors, number_of_sources);
             for i = 1:number_of_sources
-                A(:, i) = exp(1i * 2 * pi * coef * (sensor_locations - 1).' * cosd(doa(i)));
+                A(:, i) = exp(1i * 2 * pi * coef * sensor_locations.' * cosd(doa(i)));
             end
         end
 
@@ -53,7 +53,7 @@ classdef FunctionsOfDOA
 
             if method == "cbf"
                 for i = 1:length(angles)
-                    h = exp(1i * 2 * pi * coef * (sensor_locations - 1).' * cosd(angles(i)));
+                    h = exp(1i * 2 * pi * coef * sensor_locations.' * cosd(angles(i)));
                     spatial_spectrum(i) = abs(h' * (y * y') * h);
                 end
             else
@@ -103,11 +103,11 @@ classdef FunctionsOfDOA
             M = length(Ry(:, 1));
 
             if length(sensor_locations) < 2
-                sensor_locations = 1:M;
+                sensor_locations = 0:M-1;
             end
 
             for i = 1:length(angles)
-                a_ = exp(1i * 2 * pi * coef * (sensor_locations - 1).' * cosd(angles(i)));
+                a_ = exp(1i * 2 * pi * coef * sensor_locations.' * cosd(angles(i)));
                 h = ((eye(M)/(Ry)) * a_) / (a_' * (eye(M)/(Ry)) * a_);
                 spatial_spectrum(i) = abs(h' * Ry * h);
             end
@@ -125,11 +125,11 @@ classdef FunctionsOfDOA
             G = eig_vecs(:, 1:M_v-n);   % noise space
 
             if length(sensor_locations) < 2
-                sensor_locations = 1:M_v; % uniform linear array
+                sensor_locations = 0:M_v-1; % uniform linear array
             end
 
             for i = 1:length(angles)
-                a_ = exp(1i * 2 * pi * coef * (sensor_locations - 1).' * cosd(angles(i)));
+                a_ = exp(1i * 2 * pi * coef * sensor_locations.' * cosd(angles(i)));
                 spatial_spectrum(i) = 1/abs(a_' * (G * G') * a_);
             end
             spatial_spectrum = spatial_spectrum / max(spatial_spectrum);
@@ -145,7 +145,7 @@ classdef FunctionsOfDOA
             spatial_spectrum = zeros(1, length(angles));
 
             for i = 1:length(angles)
-                a = exp(1i * 2 * pi * coef * (sensor_locations-1).' * cosd(angles(i)));
+                a = exp(1i * 2 * pi * coef * sensor_locations.' * cosd(angles(i)));
                 kr_product = obj.khatri_rao(conj(a), a);
                 spatial_spectrum(i) = 1/abs(kr_product' * (G * G') * kr_product);
             end
@@ -196,20 +196,21 @@ classdef FunctionsOfDOA
                 idx_init = sum(N(1:i-1))+1;
                 idx_end = idx_init + N(i) - 1;
                 sensor_locations(idx_init:idx_end) = locations;
+                sensor_locations = sensor_locations - 1;
             end
         end
         
         % Nested Array v2 Locations
         function sensor_locations = Nested_Array_v2_Locations(~, N1, N2)
             sensor_locations = zeros(1, N1 + N2);
-            sensor_locations(1:N1+1) = 1:(N1+1);
-            sensor_locations(N1+2:N1+N2) = (2*(N1 + 1) + 1):(N1 + 1):(N2 * (N1+1) + 1);
+            sensor_locations(1:N1+1) = 0:N1;
+            sensor_locations(N1+2:N1+N2) = (2*(N1 + 1)):(N1 + 1):(N2*(N1+1));
         end
         
         % Coprime Array Locations
         function sensor_locations = Coprime_Array_Locations(~, M, N)
-            sensor_locations_1 = 1 + M * (0:N-1);
-            sensor_locations_2 = 1 + N * (0:2*M-1);
+            sensor_locations_1 = M * (0:N-1);
+            sensor_locations_2 = N * (0:2*M-1);
 
             sensor_locations = sort([sensor_locations_1 sensor_locations_2(2:end)]);
         end
@@ -235,6 +236,7 @@ classdef FunctionsOfDOA
             Z2 = N2 * (N1 + 1) - 1;
 
             sensor_locations = sort([X1 Y1 X2 Y2 Z1 Z2]);
+            sensor_locations = sensor_locations - 1;
         end
         
         % Augmented Nested Array 1 Positions
@@ -242,16 +244,16 @@ classdef FunctionsOfDOA
             if L1 == -1
                 L1 = ceil(0.5 * (N1 + 1));
             end
-            temp_locations = obj.Nested_Array_Locations([N1 N2]); % parent nested array
+            temp_locations = obj.Nested_Array_Locations([N1 N2]) + 1; % parent nested array
             temp_locations(N1 - L1 + 1:N1) = (N1 + 1) * N2 + temp_locations(N1 - L1 + 1:N1) - temp_locations(N1 - L1 + 1) + 1;
-            sensor_locations = sort(temp_locations);
+            sensor_locations = sort(temp_locations) - 1;
         end
         
         % Augmented Nested Array 2 Positions
         function sensor_locations = Augmented_Nested_Array_2_Locations(obj, N1, N2)
-            temp_locations = obj.Nested_Array_Locations([N1 N2]); % parent nested array
+            temp_locations = obj.Nested_Array_Locations([N1 N2]) + 1; % parent nested array
             temp_locations(3:2:N1) = (N1 + 1) * N2 - (rem(N1, 2) + 1) + temp_locations(3:2:N1);
-            sensor_locations = sort(temp_locations);
+            sensor_locations = sort(temp_locations) - 1;
         end
 
         % Sparse Nested Array with Coprime Displacement 1 Positions
@@ -259,7 +261,7 @@ classdef FunctionsOfDOA
             subarray1 = (0:M:(L-1)*M) + N;
             subarray2 = 0:L*M:(L-1)*L*M;
 
-            sensor_locations = sort([subarray1 subarray2]) + 1;
+            sensor_locations = sort([subarray1 subarray2]);
         end
 
         % Sparse Nested Array with Coprime Displacement 2 Positions
@@ -267,13 +269,13 @@ classdef FunctionsOfDOA
             subarray1 = ((1-L)*M:M:0) - N;
             subarray2 = 0:L*M:(L-1)*L*M;
 
-            sensor_locations = [subarray1 subarray2] + ((L-1) * M + N) + 1;
+            sensor_locations = [subarray1 subarray2] + ((L-1) * M + N);
         end
         
         % Sensor Placement
         function sensor_placement = Sensor_Placement(~, sensor_locations)
-            sensor_placement = zeros(1, sensor_locations(end));
-            sensor_placement(sensor_locations) = 1;
+            sensor_placement = zeros(1, sensor_locations(end)+1);
+            sensor_placement(sensor_locations + 1) = 1;
         end
         
         % Difference Coarray
