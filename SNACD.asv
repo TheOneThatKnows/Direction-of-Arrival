@@ -1,0 +1,50 @@
+classdef SNACD < FunctionsOfDOA
+    properties
+        subarray1_locations;
+        subarray2_locations;
+        sensor_locations;
+        A;      % array manifold matrix
+        A1;     % array manifold matrix for subarray 1
+        A2;     % array manifold matrix for subarray 2
+        N;
+        M;
+        L;
+        doa;    % doa angles of sources
+        n;      % # of sources
+        y;      % observation vector
+        y1;     % observation vector for subarray 1
+        y2;     % observation vector for subarray 2
+        R;      % cross-covariance matrix
+    end
+    methods
+        function obj = SNACD(N, M, L)
+            obj.N = N;
+            obj.M = M;
+            obj.L = L;
+            obj.subarray1_locations = ((1-L)*M:M:0) - N + ((L-1) * M + N);
+            obj.subarray2_locations = (0:L*M:(L-1)*L*M) + ((L-1) * M + N);
+
+            obj.sensor_locations = [obj.subarray1_locations obj.subarray2_locations];
+        end
+
+        function obj = set_doa_angles(obj, doa)
+            obj.doa = doa;
+            obj.n = length(doa);
+        end
+
+        function obj = Prepare_Array_Manifold(obj)
+            obj.A = obj.Array_Manifold(0.5, obj.sensor_locations, obj.doa);
+            obj.A1 = obj.A(1:obj.L, :);
+            obj.A2 = obj.A(obj.L+1:end, :);
+        end
+
+        function obj = Simulate(obj, N, mutu)
+            s = obj.Source_Generate(obj.n, N);
+            v = obj.Noise_Generate(SNR, 2*obj.L, N);
+
+            C = obj.Mutual_Coupling(100, 0.1, 2*obj.L, obj.sensor_locations);
+
+            y = C * A * s + v;
+        end
+    end
+end
