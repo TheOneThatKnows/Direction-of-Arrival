@@ -17,11 +17,14 @@ classdef FunctionsOfDOA
         end
 
         % Source Generate
-        function s = Source_Generate(~, number_of_sources, number_of_snapshots)
+        function s = Source_Generate(~, number_of_sources, number_of_snapshots, vars)
+            if nargin == 3
+                vars = ones(number_of_sources, 1);
+            end
             s = zeros(number_of_sources, number_of_snapshots);
             theta = 180 * rand(number_of_sources, 1);
             for i = 1:number_of_sources
-                s(i, :) = exp(1i * pi * (0:number_of_snapshots-1) * cosd(theta(i)));
+                s(i, :) = sqrt(vars(i)) * exp(1i * pi * (0:number_of_snapshots-1) * cosd(theta(i)));
             end
         end
 
@@ -154,6 +157,24 @@ classdef FunctionsOfDOA
             spatial_spectrum = spatial_spectrum / max(spatial_spectrum);
         end
         
+        % KR-MUSIC for Sparse Nested Arrays with Coprime Displacement
+        function spatial_spectrum = KR_MUSIC_SNACD(obj, Ry, n, subarray1_locations, subarray2_locations, coef)
+            r = Ry(:); % coarray vector
+            [S, ~, ~] = svd(r);
+            G = S(:, n+1:end); % noise space
+
+            angles = 0:0.5:180;
+            spatial_spectrum = zeros(1, length(angles));
+
+            for i = 1:length(angles)
+                a1 = exp(1i * 2 * pi * coef * subarray1_locations.' * cosd(angles(i)));
+                a2 = exp(1i * 2 * pi * coef * subarray2_locations.' * cosd(angles(i)));
+                kr_product = obj.khatri_rao(conj(a2), a1);
+                spatial_spectrum(i) = 1/abs(kr_product' * (G * G') * kr_product);
+            end
+            spatial_spectrum = spatial_spectrum / max(spatial_spectrum);
+        end
+
         % Sensor Locations
         function sensor_locations = Sensor_Locations(obj, input)
             if input(1) == 0 % nested array
