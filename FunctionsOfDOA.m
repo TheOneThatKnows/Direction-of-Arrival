@@ -83,9 +83,9 @@ classdef FunctionsOfDOA
                     end
 
                     if method == "ss-music"
-                        spatial_spectrum = obj.MUSIC(n, coef, R_z1, 1);
+                        spatial_spectrum = obj.MUSIC(n, coef, R_z1);
                     else % if method == "ss-capon"
-                        spatial_spectrum = obj.Capon(coef, R_z1, 1);
+                        spatial_spectrum = obj.Capon(coef, R_z1);
                     end
                 end
             end
@@ -107,7 +107,7 @@ classdef FunctionsOfDOA
 
             M = length(Ry(:, 1));
 
-            if length(sensor_locations) < 2
+            if nargin == 3
                 sensor_locations = 0:M-1;
             end
 
@@ -129,7 +129,7 @@ classdef FunctionsOfDOA
             [eig_vecs, ~] = eig(Rz1);   % eigen decomposition of the covariance matrix
             G = eig_vecs(:, 1:M_v-n);   % noise space
 
-            if length(sensor_locations) < 2
+            if nargin == 4
                 sensor_locations = 0:M_v-1; % uniform linear array
             end
 
