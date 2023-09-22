@@ -1,3 +1,5 @@
+% article link: "https://ieeexplore.ieee.org/abstract/document/9244211?casa_token=7B0hSlt621YAAAAA:ThVGaR6DObb6-gYhcee3wiRHiv_7sch75KwD-PfB8iheNNmWL0XoSwTbq-9eehhADix5Dvu6iQ"
+
 classdef SNACD < FunctionsOfDOA
     properties
         subarray1_locations;
