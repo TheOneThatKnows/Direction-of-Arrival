@@ -144,7 +144,7 @@ classdef SNACD < FunctionsOfDOA
             G = eig_vecs(:, 1:(2*obj.P-obj.n));   % noise space
 
             for i = 1:length(angles)
-                a_p1 = exp(1i * pi * (0:(2*obj.P-1)).' * obj.M * cosd(angles(i)));
+                a_p1 = exp(-1i * pi * (0:(2*obj.P-1)).' * obj.M * cosd(angles(i)));
                 spatial_spectrum(i) = 1/abs(a_p1' * (G * G') * a_p1);
             end
             spatial_spectrum = spatial_spectrum / max(spatial_spectrum);
