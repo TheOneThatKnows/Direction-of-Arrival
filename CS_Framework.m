@@ -12,7 +12,7 @@ classdef CS_Framework
             obj.A = A;
             [~, P] = size(y);
             [~, Kg] = size(A);
-            obj.Sg = zeros(Kg, P);
+            obj.Sg = 0.001 * ones(Kg, P);
         end
 
         function [cost, sg_hat] = Cost_Function(obj, Sg)
@@ -29,7 +29,7 @@ classdef CS_Framework
             [Kg, ~] = size(Sg);
             sg_hat = zeros(Kg, 1);
             for i = 1:Kg
-                sg_hat(i) = norm(Sg(i, :));
+                sg_hat(i) = norm(Sg(i, :))^2;
             end
         end
 
@@ -39,7 +39,8 @@ classdef CS_Framework
             first_term = zeros(Kg, P);
             for i = 1:P
                 for j = 1:Kg
-                    first_term(j, i) = Sg(j, i) / sg_hat(j);
+                    % first_term(j, i) = 0.5 * conj(Sg(j, i)) / sg_hat(j);
+                    first_term(j, i) = conj(Sg(j, i));
                 end
             end
 
@@ -48,27 +49,9 @@ classdef CS_Framework
             norm_value = norm(V(:));
             for i = 1:P
                 for j = 1:Kg
-                    second_term(j, i) = -(1/norm_value) * (obj.A(:, j).' * V(:, i));
+                    second_term(j, i) = -0.5 * (1/norm_value) * (V(:, i)' * obj.A(:, j));
                 end
             end
-
-            % first_term = zeros(P*Kg, 1);
-            % for i = 1:P
-            %     for j = 1:Kg
-            %         idx = (i-1) * Kg + j;
-            %         first_term(idx) = Sg(j, i) / sg_hat(j);
-            %     end
-            % end
-            % 
-            % second_term = zeros(P*Kg, 1);
-            % V = obj.y - obj.A * Sg;
-            % norm_value = norm(V(:));
-            % for i = 1:P
-            %     for j = 1:Kg
-            %         idx = (i-1) * Kg + j;
-            %         second_term(idx) = -(1/norm_value) * (obj.A(:, j)' * V(:, i));
-            %     end
-            % end
 
             gradient = obj.mu(1) * first_term + obj.mu(2) * second_term;
         end
@@ -88,7 +71,7 @@ classdef CS_Framework
                 alpha = obj.Dichotomous_Search(0, 1);
                 obj.Sg = obj.Sg + alpha * obj.d;
                 
-                if abs(cost - old_cost) < 0.01
+                if abs(cost - old_cost) < 0.005
                     break
                 end
 
