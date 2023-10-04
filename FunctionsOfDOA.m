@@ -388,13 +388,13 @@ classdef FunctionsOfDOA
                 for j = 1:length(sensor_locations)
                     diff = -sensor_locations(i) + sensor_locations(j);
                     idx2 = M_v + diff;
-                    if (idx2 < 1 || idx2 > uDOF) || diff_vector(idx2) == 1
+                    if (idx2 < 1 || idx2 > uDOF) || diff_vector(idx2) == diff_coarray(idx2)
                         continue
                     end
 
                     idx1 = (i-1) * M + j;
-                    X2(idx2, :) = X1(idx1, :);
-                    diff_vector(idx2) = 1;
+                    X2(idx2, :) = X2(idx2, :) + (1/diff_coarray(idx2)) * X1(idx1, :);
+                    diff_vector(idx2) = diff_vector(idx2) + 1;
                 end
             end
         end
