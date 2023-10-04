@@ -63,17 +63,36 @@ CS = CS_Framework(y, A);
 CS = CS.Steepest_Descent_DOA([1 min(1/snapshots, 0.1)]);
 if snapshots ~= 1
     x = var(CS.Sg.').';
-    figure; plot(angles, abs(x)); title('CS1');
+    x = abs(x);
 else
-    figure; plot(angles, abs(CS.Sg)); title('CS1');
+    x = abs(CS.Sg);
 end
+x = x / max(x);
+figure; plot(angles, 10*log10(x)); title('CS1');
 
-% Ry = (1/snapshots) * (y * y');
-% z = Ry(:);
-% [z1, ~] = DOA.Rearrange_According_to_Sensor_Locations(z, sensor_locations);
-% A_d = DOA.khatri_rao(conj(A), A);
-% [A1, ~] = DOA.Rearrange_According_to_Sensor_Locations(A_d, sensor_locations);
-% CS2 = CS_Framework(z, A1);
-% CS = CS.Steepest_Descent_DOA([1 0]);
-% x = var(CS.Sg.').';
-% figure; plot(angles, x); title('CS2');
+Ry = (1/snapshots) * (y * y');
+z = Ry(:);
+A_d = DOA.khatri_rao(conj(A), A);
+CS2 = CS_Framework(z, A_d);
+CS2 = CS2.Steepest_Descent_DOA([1 min(1/snapshots, 0.1)]);
+x = abs(CS2.Sg);
+x = x / max(x);
+figure; plot(angles, 10*log10(x)); title('CS2');
+
+[z1, ~] = DOA.Rearrange_According_to_Sensor_Locations(z, sensor_locations);
+[A1, ~] = DOA.Rearrange_According_to_Sensor_Locations(A_d, sensor_locations);
+CS3 = CS_Framework(z1, A1);
+CS3 = CS3.Steepest_Descent_DOA([1 min(1/snapshots, 0.1)]);
+x = abs(CS3.Sg);
+x = x / max(x);
+figure; plot(angles, 10*log10(x)); title('CS3');
+
+uDOF = length(z1);
+M_v = 0.5 * (uDOF + 1);
+z2 = [z1(1:M_v-1); z1(M_v+1:end)];
+A2 = [A1(1:M_v-1, :); A1(M_v+1:end, :)];
+CS4 = CS_Framework(z2, A2);
+CS4 = CS4.Steepest_Descent_DOA([1 min(1/snapshots, 0.1)]);
+x = abs(CS4.Sg);
+x = x / max(x);
+figure; plot(angles, 10*log10(x)); title('CS4');
