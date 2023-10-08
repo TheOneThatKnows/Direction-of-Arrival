@@ -46,8 +46,8 @@ end
 
 sensor_locations = DOA.Sensor_Locations(input);             % sensor locations
 doa = 90 - asind(0:0.2:0.6) - 5;                            % source angles
-snapshots = 3;                                              % # of snapshots
-SNR_dB = 0;                                                 % signal to noise ratio in decibels
+snapshots = 100;                                              % # of snapshots
+SNR_dB = 10;                                                 % signal to noise ratio in decibels
 C = DOA.Mutual_Coupling(100, 0.1, M, sensor_locations);     % mutual coupling
 
 n = length(doa);                                        % number of sources
@@ -58,6 +58,8 @@ A = DOA.Array_Manifold(coef, sensor_locations, doa);    % Array Manifold
 y = C * A * s + v;
 angles = 0:1:180;
 A = DOA.Array_Manifold(coef, sensor_locations, angles);
+
+%% On-Grid
 
 CS = CS_Framework(y, A);
 CS = CS.Steepest_Descent_DOA([1 min(1/snapshots, 0.1)]);
@@ -98,5 +100,23 @@ A2 = [A1(1:M_v-1, :); A1(M_v+1:end, :)];
 CS4 = CS_Framework_Utilizing_Difference_Coarray(z2, A2);
 CS4 = CS4.Steepest_Descent_DOA([1 2]);
 x = abs(CS4.sg);
+% x = x / max(x);
+% figure; plot(angles, 10*log10(x)); title('CS4');
+figure; plot(angles, x); title('CS4');
+
+%% Off-Grid
+
+L = -1i * 2 * pi * coef * diag(sind(angles));
+D = diag(sensor_locations);
+B = D * A * L; % B: Derivative of A
+
+CS_Off = CS_Off_Grid_Framework(y, A, B);
+CS_Off = CS_Off.Steepest_Descent_DOA([0.5 0.5]);
+if snapshots ~= 1
+    x = var(CS_Off.Sg.').';
+    x = abs(x);
+else
+    x = abs(CS_Off.Sg);
+end
 x = x / max(x);
-figure; plot(angles, 10*log10(x)); title('CS4');
+figure; plot(angles, 10*log10(x)); title('CS_Off');
