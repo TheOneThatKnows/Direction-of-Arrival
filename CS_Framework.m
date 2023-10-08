@@ -4,7 +4,6 @@ classdef CS_Framework
         A;
         Sg;
         mu;
-        d;
     end
     methods
         function obj = CS_Framework(y, A)
@@ -67,9 +66,9 @@ classdef CS_Framework
 
             while true
                 [cost, sg_hat] = obj.Cost_Function();
-                obj.d = -obj.Cost_Gradient(obj.Sg, sg_hat);
-                alpha = obj.Dichotomous_Search(0, 1);
-                obj.Sg = obj.Sg + alpha * obj.d;
+                d = -obj.Cost_Gradient(obj.Sg, sg_hat);
+                alpha = obj.Dichotomous_Search(d, 0, 1);
+                obj.Sg = obj.Sg + alpha * d;
                 
                 if abs(cost - old_cost) < 0.005
                     break
@@ -79,13 +78,13 @@ classdef CS_Framework
             end
         end
 
-        function alpha = Dichotomous_Search(obj, a, b, LAMBDA)
-            if nargin == 3
+        function alpha = Dichotomous_Search(obj, d, a, b, LAMBDA)
+            if nargin == 4
                 LAMBDA = 0.01;
             end
 
-            x1 = obj.Sg + (0.5 * (a + b) - LAMBDA) * obj.d;
-            x2 = obj.Sg + (0.5 * (a + b) + LAMBDA) * obj.d;
+            x1 = obj.Sg + (0.5 * (a + b) - LAMBDA) * d;
+            x2 = obj.Sg + (0.5 * (a + b) + LAMBDA) * d;
 
             while true
                 f1 = obj.Cost_Function(x1);
@@ -101,8 +100,8 @@ classdef CS_Framework
                     break
                 end
 
-                x1 = obj.Sg + (0.5 * (a + b) - LAMBDA) * obj.d;
-                x2 = obj.Sg + (0.5 * (a + b) + LAMBDA) * obj.d;
+                x1 = obj.Sg + (0.5 * (a + b) - LAMBDA) * d;
+                x2 = obj.Sg + (0.5 * (a + b) + LAMBDA) * d;
             end
 
             alpha = 0.5 * (a + b);
