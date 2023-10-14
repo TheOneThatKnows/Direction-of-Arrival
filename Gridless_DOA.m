@@ -1,0 +1,88 @@
+classdef Gridless_DOA
+    properties
+        G;
+        gamma;
+        doa_angles;
+        z;
+        c;
+    end
+    methods
+        function obj = Gridless_DOA()
+        end
+
+        % Irregular Vandermonde Decomposition
+        function obj = IVD(obj, T, gamma, K)
+            % T: Autocovarience Matrix
+            % gamma: Sensor Positions
+            % K: # of sources
+
+            obj.gamma = gamma;
+            M = length(gamma);  % # of sensors
+            [U, ~, ~] = svd(T);
+            U_N = U(:, 1:M-K);  % Noise Space
+
+            doa_angles = obj.estimate_doas(U_N, M, K);
+            z = exp(1i * pi * cosd(doa_angles));
+            W = zeros(M, K);
+            for i = 1:K
+                W(:, i) = z(i).^(gamma.');
+            end
+            W_pseudo_inv = (W' * W)\W';
+            C = W_pseudo_inv * T * W_pseudo_inv';
+            c = zeros(K, 1);
+            for i = 1:K
+                c(i) = C(i, i);
+            end
+            obj.doa_angles = doa_angles;
+            obj.z = z;
+            obj.c = c;
+        end
+
+        function doa_angles = estimate_doas(obj, U_N, M, K)
+            obj.G = U_N * U_N';
+            intervals = 18/M * (0:10*M-1).' * [1 1] + [0 18/M];
+            doa_candidates = zeros(10*M, 1);
+            mags = zeros(10*M, 1); % magnitude of each doa candidate
+            for i = 1:10*M
+                a = intervals(i, 1);
+                b = intervals(i, 2);
+                doa_candidates(i) = obj.golden_section(a, b, 20);
+                mags(i) = abs(obj.D(doa_candidates(i)));
+            end
+            doa_angles = zeros(K, 1);
+            for i = 1:K
+                [~, idx] = min(mags);
+                doa_angles(i) = doa_candidates(idx);
+                mags = [mags(1:idx-1); mags(idx+1:end)];
+                doa_candidates = [doa_candidates(1:idx-1); doa_candidates(idx+1:end)];
+            end
+        end
+
+        function out = D(obj, theta)
+            M = length(obj.gamma);
+            z = exp(1i * pi * cosd(theta));
+            out = 0;
+            for i = 1:M
+                for j = 1:M
+                    out = out + obj.G(i, j) * z^(obj.gamma(i)-obj.gamma(j));
+                end
+            end
+        end
+
+        % Golden Section Search
+        function out = golden_section(obj, a, b, ITER)
+            g = 0.382;
+            for iter = 1:ITER
+                l = b - a;
+                a1 = a + g*l;
+                b1 = b - g*l;
+                if abs(obj.D(a1)) < abs(obj.D(b1))
+                    b = b1;
+                else
+                    a = a1;
+                end
+            end
+            out = 0.5 * (a + b);
+        end
+    end
+end

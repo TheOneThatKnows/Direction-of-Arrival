@@ -120,3 +120,10 @@ else
 end
 x = x / max(x);
 figure; plot(angles, 10*log10(x)); title('CS_Off');
+
+%% Gridless-DOA
+
+T = (1/snapshots) * (y * y');
+GD = Gridless_DOA();
+GD = GD.IVD(T, sensor_locations, n);
+GD.doa_angles
