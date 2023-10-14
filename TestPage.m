@@ -127,3 +127,10 @@ T = (1/snapshots) * (y * y');
 GD = Gridless_DOA();
 GD = GD.IVD(T, sensor_locations, n);
 GD.doa_angles
+
+[eig_vec, eig_val] = eig(T)
+[S, V, D] = svd(T)
+
+angles = 0:180;
+spec = GD.D2(angles);
+plot(angles, abs(spec))

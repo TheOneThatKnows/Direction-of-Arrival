@@ -20,9 +20,9 @@ classdef Gridless_DOA
             obj.gamma = gamma;
             M = length(gamma);  % # of sensors
             [U, ~, ~] = svd(T);
-            U_N = U(:, 1:M-K);  % Noise Space
+            U_N = U(:, K+1:M);  % Noise Space
 
-            doa_angles = obj.estimate_doas(U_N, M, K);
+            [obj, doa_angles] = obj.estimate_doas(U_N, M, K);
             z = exp(1i * pi * cosd(doa_angles));
             W = zeros(M, K);
             for i = 1:K
@@ -39,7 +39,7 @@ classdef Gridless_DOA
             obj.c = c;
         end
 
-        function doa_angles = estimate_doas(obj, U_N, M, K)
+        function [obj, doa_angles] = estimate_doas(obj, U_N, M, K)
             obj.G = U_N * U_N';
             intervals = 18/M * (0:10*M-1).' * [1 1] + [0 18/M];
             idx = 1;
@@ -64,13 +64,20 @@ classdef Gridless_DOA
             end
         end
 
+        function spec = D2(obj, angles)
+            spec = zeros(1, length(angles));
+            for i = 1:length(angles)
+                spec(i) = obj.D(angles(i));
+            end
+        end
+
         function out = D(obj, theta)
             M = length(obj.gamma);
             z = exp(1i * pi * cosd(theta));
             out = 0;
             for i = 1:M
                 for j = 1:M
-                    out = out + obj.G(i, j) * z^(obj.gamma(i)-obj.gamma(j));
+                    out = out + obj.G(i, j) * z^(obj.gamma(j)-obj.gamma(i));
                 end
             end
         end
@@ -78,8 +85,13 @@ classdef Gridless_DOA
         % Golden Section Search
         function [out, localMin] = golden_section(obj, a, b, ITER)
             g = 0.382;
-            for iter = 1:ITER
+            while true
                 l = b - a;
+
+                if l < 0.0005
+                    break
+                end
+
                 a1 = a + g*l;
                 b1 = b - g*l;
                 if abs(obj.D(a1)) < abs(obj.D(b1))
@@ -89,8 +101,8 @@ classdef Gridless_DOA
                 end
             end
             out = 0.5 * (a + b);
-            cond1 = (obj.D(out - 0.1) > obj.D(out));
-            cond2 = (obj.D(out + 0.1) > obj.D(out));
+            cond1 = (obj.D(out - 0.001) > obj.D(out));
+            cond2 = (obj.D(out + 0.001) > obj.D(out));
             localMin = cond1 & cond2;
         end
     end
