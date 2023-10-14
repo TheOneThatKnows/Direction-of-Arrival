@@ -5,6 +5,7 @@ classdef Gridless_DOA
         doa_angles;
         z;
         c;
+        spectrum;
     end
     methods
         function obj = Gridless_DOA()
@@ -41,13 +42,18 @@ classdef Gridless_DOA
         function doa_angles = estimate_doas(obj, U_N, M, K)
             obj.G = U_N * U_N';
             intervals = 18/M * (0:10*M-1).' * [1 1] + [0 18/M];
-            doa_candidates = zeros(10*M, 1);
-            mags = zeros(10*M, 1); % magnitude of each doa candidate
+            idx = 1;
+            doa_candidates = [];
+            mags = [];
             for i = 1:10*M
                 a = intervals(i, 1);
                 b = intervals(i, 2);
-                doa_candidates(i) = obj.golden_section(a, b, 20);
-                mags(i) = abs(obj.D(doa_candidates(i)));
+                [doa_candidate, localMin] = obj.golden_section(a, b, 20);
+                if localMin
+                    doa_candidates = [doa_candidates; doa_candidate];
+                    mags = [mags; abs(obj.D(doa_candidate))];
+                    idx = idx + 1;
+                end
             end
             doa_angles = zeros(K, 1);
             for i = 1:K
@@ -70,7 +76,7 @@ classdef Gridless_DOA
         end
 
         % Golden Section Search
-        function out = golden_section(obj, a, b, ITER)
+        function [out, localMin] = golden_section(obj, a, b, ITER)
             g = 0.382;
             for iter = 1:ITER
                 l = b - a;
@@ -83,6 +89,9 @@ classdef Gridless_DOA
                 end
             end
             out = 0.5 * (a + b);
+            cond1 = (obj.D(out - 0.1) > obj.D(out));
+            cond2 = (obj.D(out + 0.1) > obj.D(out));
+            localMin = cond1 & cond2;
         end
     end
 end

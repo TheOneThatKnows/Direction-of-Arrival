@@ -46,7 +46,7 @@ end
 
 sensor_locations = DOA.Sensor_Locations(input);             % sensor locations
 doa = 90 - asind(0:0.2:0.6) - 5;                            % source angles
-snapshots = 100;                                              % # of snapshots
+snapshots = 1000;                                              % # of snapshots
 SNR_dB = 10;                                                 % signal to noise ratio in decibels
 C = DOA.Mutual_Coupling(100, 0.1, M, sensor_locations);     % mutual coupling
 
