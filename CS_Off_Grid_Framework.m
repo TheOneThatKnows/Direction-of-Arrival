@@ -15,7 +15,7 @@ classdef CS_Off_Grid_Framework
             [~, P] = size(y);
             [~, Kg] = size(A);
             obj.Sg = 0.001 * ones(Kg, P);
-            obj.beta = 0.001 * ones(Kg, 1);
+            obj.beta = 0.0001 * ones(Kg, 1);
         end
 
         function cost = Cost_Function(obj, Sg, beta)
@@ -23,7 +23,7 @@ classdef CS_Off_Grid_Framework
             Phi = obj.A + obj.B * diag(beta);
             vectorized_term = obj.y - Phi * Sg;
             vectorized_term = vectorized_term(:);
-            cost = obj.mu(1) * norm(sg_hat, 1) + 0.5 * norm(vectorized_term)^2 + obj.mu(2) * norm(beta)^2;
+            cost = obj.mu(1) * sum(sg_hat) + 0.5 * (vectorized_term' * vectorized_term) + obj.mu(2) * (beta' * beta);
         end
 
         function sg_hat = Calculate_sg_hat(~, Sg)
@@ -47,10 +47,10 @@ classdef CS_Off_Grid_Framework
             second_term = zeros(Kg, P);
             Phi = obj.A + obj.B * diag(obj.beta);
             V = obj.y - Phi * Sg;
-            norm_value = norm(V(:));
+            % norm_value = norm(V(:));
             for i = 1:P
                 for j = 1:Kg
-                    second_term(j, i) = -0.5 * norm_value * (V(:, i)' * Phi(:, j));
+                    second_term(j, i) = -0.5 * (V(:, i)' * Phi(:, j));
                 end
             end
 
@@ -58,7 +58,7 @@ classdef CS_Off_Grid_Framework
 
             first_term = zeros(Kg, 1);
             for i = 1:Kg
-                first_term(i) = -0.5 * norm_value * Sg(i, :) * V' * obj.B(:, i);
+                first_term(i) = -0.5 * Sg(i, :) * V' * obj.B(:, i);
             end
             second_term = conj(obj.beta);
 
@@ -75,17 +75,24 @@ classdef CS_Off_Grid_Framework
             old_cost = inf;
 
             while true
-                cost = obj.Cost_Function(obj.Sg, obj.beta);
-                [g, ~] = obj.Cost_Gradient(obj.Sg);
-                d = -g;
-                alpha = obj.Dichotomous_Search("Sg", d, 0, 1);
-                obj.Sg = obj.Sg + alpha * d;
+                while true
+                    cost = obj.Cost_Function(obj.Sg, obj.beta);
+                    [g, ~] = obj.Cost_Gradient(obj.Sg);
+                    d = -g;
+                    alpha = obj.Dichotomous_Search("Sg", d, 0, 1);
+                    obj.Sg = obj.Sg + alpha * d;
+                    cost
+                    if abs(cost - old_cost) < 0.005
+                        break
+                    end
 
+                    old_cost = cost;
+                end
                 [~, g] = obj.Cost_Gradient(obj.Sg);
                 d = -g;
                 alpha = obj.Dichotomous_Search("beta", d, 0, 1);
                 obj.beta = obj.beta + alpha * d;
-                
+
                 if abs(cost - old_cost) < 0.005
                     break
                 end
