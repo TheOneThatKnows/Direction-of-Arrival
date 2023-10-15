@@ -2,17 +2,13 @@ classdef Gridless_DOA
     properties
         G;
         gamma;
-        doa_angles;
-        z;
-        c;
-        spectrum;
     end
     methods
         function obj = Gridless_DOA()
         end
 
         % Irregular Vandermonde Decomposition
-        function obj = IVD(obj, T, gamma, K)
+        function [obj, doa_angles, z, c] = IVD(obj, T, gamma, K)
             % T: Autocovarience Matrix
             % gamma: Sensor Positions
             % K: # of sources
@@ -24,19 +20,13 @@ classdef Gridless_DOA
 
             [obj, doa_angles] = obj.estimate_doas(U_N, M, K);
             z = exp(1i * pi * cosd(doa_angles));
-            W = zeros(M, K);
-            for i = 1:K
-                W(:, i) = z(i).^(gamma.');
-            end
+            W = obj.IVM(gamma, z);
             W_pseudo_inv = (W' * W)\W';
             C = W_pseudo_inv * T * W_pseudo_inv';
             c = zeros(K, 1);
             for i = 1:K
                 c(i) = C(i, i);
             end
-            obj.doa_angles = doa_angles;
-            obj.z = z;
-            obj.c = c;
         end
 
         function [obj, doa_angles] = estimate_doas(obj, U_N, M, K)
@@ -48,7 +38,7 @@ classdef Gridless_DOA
             for i = 1:10*M
                 a = intervals(i, 1);
                 b = intervals(i, 2);
-                [doa_candidate, localMin] = obj.golden_section(a, b, 20);
+                [doa_candidate, localMin] = obj.golden_section(a, b);
                 if localMin
                     doa_candidates = [doa_candidates; doa_candidate];
                     mags = [mags; abs(obj.D(doa_candidate))];
@@ -83,7 +73,7 @@ classdef Gridless_DOA
         end
 
         % Golden Section Search
-        function [out, localMin] = golden_section(obj, a, b, ITER)
+        function [out, localMin] = golden_section(obj, a, b)
             g = 0.382;
             while true
                 l = b - a;
@@ -104,6 +94,24 @@ classdef Gridless_DOA
             cond1 = (obj.D(out - 0.001) > obj.D(out));
             cond2 = (obj.D(out + 0.001) > obj.D(out));
             localMin = cond1 & cond2;
+        end
+
+        % Irregular Vandermonde Matrix
+        function W = IVM(~, gamma, z)
+            M = length(gamma);
+            K = length(z);
+
+            W = zeros(M, K);
+            for i = 1:K
+                W(:, i) = z(i).^(gamma.');
+            end
+        end
+
+        % Projection Onto Irregular Toeplitz Set
+        function [obj, T_projected] = PTG(obj, T, gamma, K)
+            [obj, ~, z, c] = obj.IVD(T, gamma, K);
+            W = obj.IVM(gamma, z);
+            T_projected = W * diag(c) * W';
         end
     end
 end

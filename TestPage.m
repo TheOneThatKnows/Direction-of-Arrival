@@ -125,8 +125,8 @@ figure; plot(angles, 10*log10(x)); title('CS_Off');
 
 T = (1/snapshots) * (y * y');
 GD = Gridless_DOA();
-GD = GD.IVD(T, sensor_locations, n);
-GD.doa_angles
+[GD, doa_angles, z, c] = GD.IVD(T, sensor_locations, n);
+doa_angles
 
 [eig_vec, eig_val] = eig(T)
 [S, V, D] = svd(T)
@@ -134,3 +134,7 @@ GD.doa_angles
 angles = 0:180;
 spec = GD.D2(angles);
 plot(angles, abs(spec))
+
+[GD, T_projected] = GD.PTG(T, sensor_locations, n);
+T
+T_projected
