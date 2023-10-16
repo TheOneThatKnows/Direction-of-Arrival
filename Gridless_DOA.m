@@ -1,3 +1,6 @@
+% article link:
+% https://ieeexplore.ieee.org/abstract/document/9384289
+
 classdef Gridless_DOA
     properties
         G;
@@ -112,6 +115,17 @@ classdef Gridless_DOA
             [obj, ~, z, c] = obj.IVD(T, gamma, K);
             W = obj.IVM(gamma, z);
             T_projected = W * diag(c) * W';
+        end
+
+        % Projection Onto Positive Semi-Definite Cone
+        function M_out = PPSD(~, M_in)
+            [N, ~] = size(M_in);
+            M_out = zeros(N);
+            [eig_vec, eig_val] = eig(M_in, 'vector');
+            
+            for i = 1:N
+                M_out = M_out + max(0, eig_val(i)) * (eig_vec(:, i) * eig_vec(:, i)');
+            end
         end
     end
 end
