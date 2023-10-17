@@ -127,5 +127,39 @@ classdef Gridless_DOA
                 M_out = M_out + max(0, eig_val(i)) * (eig_vec(:, i) * eig_vec(:, i)');
             end
         end
+
+        % Projection Onto S(T_gamma_K, Y)
+        function M_out = PS(obj, M_in, Y, gamma, K)
+            M_out = zeros(size(M_in));
+            [rY, ~] = size(Y);
+            B = M_in(1:rY, 1:rY);
+            Q = M_in(rY+1:end, rY+1:end);
+
+            M_out(1:rY, 1:rY) = obj.PTG(B, gamma, K);
+            M_out(1:rY, rY+1:end) = Y;
+            M_out(rY+1:end, 1:rY) = Y';
+            M_out(rY+1:end, rY+1:end) = Q;
+        end
+
+        % AP Gridless
+        function [obj, doa_angles] = AP_Gridless(obj, Y, gamma, K)
+            [M, N] = size(Y);
+            B = zeros(M);
+            Q = (1 / N) * (Y' * Y);
+            L = [B Y; Y' Q];
+            while true
+                H = obj.PPSD(L);
+                T = H(1:M, 1:M);
+                L_old = L;
+                [obj, T_projected] = obj.PTG(T, gamma, K);
+                L = [T_projected Y; Y' Q];
+
+                if norm(L - L_old) <= 1e-7
+                    break
+                end
+            end
+            T = L(1:M, 1:M);
+            [obj, doa_angles, ~, ~] = obj.IVD(T, gamma, K);
+        end
     end
 end

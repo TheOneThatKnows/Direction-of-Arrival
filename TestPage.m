@@ -26,11 +26,11 @@ clear; clc; close all;
 DOA = FunctionsOfDOA();
 coef = 0.5; % unit distance between sensors divided by the wavelength of the signal
 
-input = [0 3 3];      % [nested_array M1 M2]
+% input = [0 10 10];      % [nested_array M1 M2]
 % input = [1 2 3];      % [coprime_array M1 M2]
 % input = [2 4 3];      % [super_nested_array M1 M2]
 % input = [3 4 4 3];    % [augmented_nested_array_1 M1 M2 L1]
-% input = [4 7 4];      % [augmented_nested_array_2 M1 M2]
+input = [4 10 10];      % [augmented_nested_array_2 M1 M2]
 % input = [5 3 3];      % [nested_array_v2 M1 M2]
 % input = [6 2 3 3];    % [sparse_nested_array_with_coprime_displacement_1 N M L]
 % input = [7 1 2 3];    % [sparse_nested_array_with_coprime_displacement_2 N M L]
@@ -45,10 +45,11 @@ else
 end
 
 sensor_locations = DOA.Sensor_Locations(input);             % sensor locations
-doa = 90 - asind(0:0.2:0.6) - 5;                            % source angles
-snapshots = 1000;                                              % # of snapshots
-SNR_dB = 10;                                                 % signal to noise ratio in decibels
-C = DOA.Mutual_Coupling(100, 0.1, M, sensor_locations);     % mutual coupling
+% doa = 90 - asind(0:0.2:0.6) - 5;                            % source angles
+doa = [88 93 165];
+snapshots = 1;                                              % # of snapshots
+SNR_dB = 15;                                                 % signal to noise ratio in decibels
+C = DOA.Mutual_Coupling(200, 0.1, M, sensor_locations);     % mutual coupling
 
 n = length(doa);                                        % number of sources
 s = DOA.Source_Generate(n, snapshots);                  % source signals
@@ -123,18 +124,22 @@ figure; plot(angles, 10*log10(x)); title('CS_Off');
 
 %% Gridless-DOA
 
-T = (1/snapshots) * (y * y');
 GD = Gridless_DOA();
-[GD, doa_angles, z, c] = GD.IVD(T, sensor_locations, n);
-doa_angles
 
-[eig_vec, eig_val] = eig(T)
-[S, V, D] = svd(T)
+T = (1/snapshots) * (y * y');
+[GD, doa_angles_ivd, z, c] = GD.IVD(T, sensor_locations, n);
+doa_angles_ivd
 
 angles = 0:180;
 spec = GD.D2(angles);
-plot(angles, abs(spec))
+figure; plot(angles, abs(spec));
+title('IVD using T');
 
-[GD, T_projected] = GD.PTG(T, sensor_locations, n);
-T
-T_projected
+[GD, doa_angles_ap_gridless] = GD.AP_Gridless(y, sensor_locations, n);
+doa_angles_ap_gridless
+
+spec = GD.D2(angles);
+figure; plot(angles, abs(spec));
+title('IVD using Y');
+
+doa
