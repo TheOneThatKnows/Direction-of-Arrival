@@ -1,3 +1,6 @@
+% article link:
+% https://ieeexplore.ieee.org/abstract/document/7744507
+
 classdef CS_Framework_Utilizing_Difference_Coarray
     properties
         z;

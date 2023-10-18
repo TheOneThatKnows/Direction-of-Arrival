@@ -1,3 +1,6 @@
+% article link:
+% https://www.sciencedirect.com/science/article/pii/B9780128118870000110
+
 classdef CS_Off_Grid_Framework
     properties
         y;
