@@ -1,4 +1,156 @@
 clear; clc; close all;
+load data_6_sensors_3
+
+figure; hold on; grid on;
+xlabel('angles (degrees)');
+ylabel('Spatial Spectrum (dB)');
+title('Spatial Spectra');
+plot(angles, 10 * log10(das_ULA));
+plot(angles, 10 * log10(capon_ULA));
+plot(angles, 10 * log10(music_ULA));
+legend('Delay-and-Sum', 'Capon', 'MUSIC');
+
+figure; hold on; grid on;
+xlabel('angles (degrees)');
+ylabel('Spatial Spectrum (dB)');
+title('Spatial Spectra');
+plot(angles, 10 * log10(das_ULA));
+plot(angles, 10 * log10(capon_ULA));
+plot(angles, 10 * log10(music_ULA));
+plot(angles, 10 * log10(ss_music_MRA));
+legend('Delay-and-Sum', 'Capon', 'MUSIC', 'SS-MUSIC');
+
+%%
+clear; clc; close all;
+
+DOA = FunctionsOfDOA();
+coef = 0.5; % unit distance between sensors divided by the wavelength of the signal
+
+% M = 24;     % # of sensor locations
+coef = 0.5; % distance between sensor locations divided by wavelength of signal
+% h_loc = zeros(M, 1);
+% h_loc([1 2 5 11 17 19 22 24]) = 1; % locations where there are sensors
+sensor_locations = [1 2 5 11 17 19 22 24] - 1;
+M = length(sensor_locations);
+
+doa = 60; doa2 = 110; n = 2; % # of sources
+a1 = exp(1i * 2 * pi * coef * sensor_locations.' * cosd(doa));
+a2 = exp(1i * 2 * pi * coef * sensor_locations.' * cosd(doa2));
+N = 1000; % # of snapshots
+SNR = 10; % dB
+
+s = DOA.Source_Generate(2, N);
+v = DOA.Noise_Generate(SNR, M, N);
+A = DOA.Array_Manifold(coef, sensor_locations, [doa doa2]);
+
+y = A * s + v;
+
+angles = 0:0.5:180;
+
+% Conventional Beamformer
+power_pattern = zeros(1, length(angles));
+for i = 1:length(angles)
+    h = exp(1i * 2 * pi * coef * sensor_locations.' * cosd(angles(i)));
+    power_pattern(i) = abs(h' * (y * y') * h);
+end
+power_pattern = power_pattern / max(power_pattern);
+figure;
+plot(angles, 10 * log10(power_pattern));
+hold on
+
+% Capon
+Ry = y * y'; % covariance matrix
+power_pattern2 = zeros(1, length(angles));
+for i = 1:length(angles)
+    a_ = exp(1i * 2 * pi * coef * sensor_locations.' * cosd(angles(i)));
+    h = (inv(Ry) * a_) / (a_' * inv(Ry) * a_);
+    power_pattern2(i) = abs(h' * (y * y') * h);
+end
+power_pattern2 = power_pattern2 / max(power_pattern2);
+plot(angles, 10 * log10(power_pattern2));
+
+% MUSIC
+[eig_vecs, ~] = eig(Ry); % eigen decomposition of the covariance matrix
+G = eig_vecs(:, 1:M-n);  % noise space
+spec = zeros(1, length(angles));
+for j = 1:length(angles)
+    a_ = exp(1i * pi * sensor_locations.' * cos(angles(j) * pi / 180));
+    spec(j) = 1/abs(a_' * (G * G') * a_);
+end
+spec = spec / max(spec);
+plot(angles, 10 * log10(spec))
+title("Minimum Redundant Array Processing")
+xlim([0 180])
+xlabel("phi (degree)")
+legend("Conventional", "Capon", "Music")
+grid on
+
+%%
+clear; clc; close all;
+
+DOA = FunctionsOfDOA();
+coef = 0.5; % unit distance between sensors divided by the wavelength of the signal
+
+% M = 24;     % # of sensor locations
+coef = 0.5; % distance between sensor locations divided by wavelength of signal
+% h_loc = zeros(M, 1);
+% h_loc([1 2 5 11 17 19 22 24]) = 1; % locations where there are sensors
+sensor_locations = 0:5;
+M = length(sensor_locations);
+
+doa = 60; doa2 = 110; n = 2; % # of sources
+a1 = exp(1i * 2 * pi * coef * sensor_locations.' * cosd(doa));
+a2 = exp(1i * 2 * pi * coef * sensor_locations.' * cosd(doa2));
+N = 1000; % # of snapshots
+SNR = 10; % dB
+
+s = DOA.Source_Generate(2, N);
+v = DOA.Noise_Generate(SNR, M, N);
+A = DOA.Array_Manifold(coef, sensor_locations, [doa doa2]);
+
+y = A * s + v;
+
+angles = 0:0.5:180;
+
+% Conventional Beamformer
+power_pattern = zeros(1, length(angles));
+for i = 1:length(angles)
+    h = exp(1i * 2 * pi * coef * sensor_locations.' * cosd(angles(i)));
+    power_pattern(i) = abs(h' * (y * y') * h);
+end
+power_pattern = power_pattern / max(power_pattern);
+figure;
+plot(angles, 10 * log10(power_pattern));
+hold on
+
+% Capon
+Ry = y * y'; % covariance matrix
+power_pattern2 = zeros(1, length(angles));
+for i = 1:length(angles)
+    a_ = exp(1i * 2 * pi * coef * sensor_locations.' * cosd(angles(i)));
+    h = (inv(Ry) * a_) / (a_' * inv(Ry) * a_);
+    power_pattern2(i) = abs(h' * (y * y') * h);
+end
+power_pattern2 = power_pattern2 / max(power_pattern2);
+plot(angles, 10 * log10(power_pattern2));
+
+% MUSIC
+[eig_vecs, ~] = eig(Ry); % eigen decomposition of the covariance matrix
+G = eig_vecs(:, 1:M-n);  % noise space
+spec = zeros(1, length(angles));
+for j = 1:length(angles)
+    a_ = exp(1i * pi * sensor_locations.' * cos(angles(j) * pi / 180));
+    spec(j) = 1/abs(a_' * (G * G') * a_);
+end
+spec = spec / max(spec);
+plot(angles, 10 * log10(spec))
+title("Minimum Redundant Array Processing")
+xlim([0 180])
+xlabel("phi (degree)")
+legend("Conventional", "Capon", "Music")
+grid on
+%%
+clear; clc; close all;
 
 snacd = SNACD(3, 2, 4);
 doa = 90 - asind(0:0.2:0.4) - 5;
@@ -26,11 +178,11 @@ clear; clc; close all;
 DOA = FunctionsOfDOA();
 coef = 0.5; % unit distance between sensors divided by the wavelength of the signal
 
-% input = [0 10 10];      % [nested_array M1 M2]
+input = [0 3 3];      % [nested_array M1 M2]
 % input = [1 2 3];      % [coprime_array M1 M2]
 % input = [2 4 3];      % [super_nested_array M1 M2]
 % input = [3 4 4 3];    % [augmented_nested_array_1 M1 M2 L1]
-input = [4 10 10];      % [augmented_nested_array_2 M1 M2]
+% input = [4 10 10];      % [augmented_nested_array_2 M1 M2]
 % input = [5 3 3];      % [nested_array_v2 M1 M2]
 % input = [6 2 3 3];    % [sparse_nested_array_with_coprime_displacement_1 N M L]
 % input = [7 1 2 3];    % [sparse_nested_array_with_coprime_displacement_2 N M L]
@@ -45,9 +197,9 @@ else
 end
 
 sensor_locations = DOA.Sensor_Locations(input);             % sensor locations
-% doa = 90 - asind(0:0.2:0.6) - 5;                            % source angles
-doa = [88 93 165];
-snapshots = 1;                                              % # of snapshots
+doa = 90 - asind(0:0.2:0.6) - 5;                            % source angles
+% doa = [88 93 165];
+snapshots = 100;                                              % # of snapshots
 SNR_dB = 15;                                                 % signal to noise ratio in decibels
 C = DOA.Mutual_Coupling(200, 0.1, M, sensor_locations);     % mutual coupling
 
@@ -112,7 +264,7 @@ D = diag(sensor_locations);
 B = D * A * L; % B: Derivative of A
 
 CS_Off = CS_Off_Grid_Framework(y, A, B);
-CS_Off = CS_Off.Steepest_Descent_DOA([0.5 0.5]);
+CS_Off = CS_Off.Steepest_Descent_DOA([0.05 0.05]);
 if snapshots ~= 1
     x = var(CS_Off.Sg.').';
     x = abs(x);
@@ -143,3 +295,72 @@ figure; plot(angles, abs(spec));
 title('IVD using Y');
 
 doa
+
+%%
+
+D = 600000;
+for i = 1:D
+    K = randi(N);
+    k = zeros(N, 1);
+    k(K) = 1;
+    source_angles = (1 + rand(1, K)) * 60;
+    source_angles = sort(source_angles);
+    for j = 2:K
+        if abs(source_angles(j) - source_angles(j-1))
+            source_angles(j) = (1 + rand) * 60;
+            source_angles = sort(source_angles);
+            j = 2;
+        end
+    end
+    A_ohm = Array_Manifold(sensor_locations, source_angles);
+    s = Source_Generate(K, L);
+    C = Mutual_Coupling(100, 0.1, M, sensor_locations);
+    SNR_dB = (rand * 2 - 1) * 15;
+    v = Noise_Generate(SNR_dB, M, L);
+    y = C * A_ohm * s + v;
+    R_ohm = (1/L) * (y * y');
+    A = Array_Manifold(0:N-1, source_angles);
+    Rs = (1/L) * (s * s');
+    R = A * Rs * A';
+    u = R(:, 1);
+
+end
+
+D = 600000;
+for i = 1:D
+    K = randi(N);
+    k = zeros(N, 1);
+    k(K) = 1;
+    source_angles = (1 + rand(1, K)) * 60;
+    source_angles = sort(source_angles);
+    for j = 2:K
+        if abs(source_angles(j) - source_angles(j-1))
+            source_angles(j) = (1 + rand) * 60;
+            source_angles = sort(source_angles);
+            j = 2;
+        end
+    end
+    A_ohm = Array_Manifold(sensor_locations, source_angles);
+    s = Source_Generate(K, L);
+    C = Mutual_Coupling(100, 0.1, M, sensor_locations);
+    SNR_dB = (rand * 2 - 1) * 15;
+    v = Noise_Generate(SNR_dB, M, L);
+    y = C * A_ohm * s + v;
+    R_ohm = (1/L) * (y * y');
+
+    % here we do something that is not important
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
