@@ -15,7 +15,8 @@ coef = 0.5; % unit distance between sensors divided by the wavelength of the sig
 %% Start
 
 % Sensor Array
-sensor_locations = [0 1 2 3 7 11]; % ULA with M number of sensors
+% sensor_locations = [0 1 2 3 7 11]; % ULA with M number of sensors
+sensor_locations = 0:63;
 M = length(sensor_locations);
 
 % Environment

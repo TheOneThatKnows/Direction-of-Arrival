@@ -1,3 +1,88 @@
+%% 
+clear; clc; close all;
+
+DOA = FunctionsOfDOA();
+
+sensor_locations = 0:7;
+M = length(sensor_locations);
+
+doa = [83 94];
+K = length(doa);
+SNR_dB = 20;
+L = 20; % #of snapshots
+
+A = DOA.Array_Manifold(0.5, sensor_locations, doa);
+s = DOA.Source_Generate(K, L);
+n = DOA.Noise_Generate(SNR_dB, M, L);
+
+y = A * s + n;
+R = (1 / L) * (y * y');
+
+re_R = real(R);
+im_R = imag(R);
+
+figure;
+imagesc(re_R);
+axis equal tight;
+colorbar;
+title('Re(Original)');
+
+figure;
+imagesc(im_R);
+axis equal tight;
+colorbar;
+title('Im(Original)');
+
+%%
+
+sensor_locations = 0:63;
+M = length(sensor_locations);
+
+doa = [83 94];
+K = length(doa);
+SNR_dB = 20;
+L = 20; % #of snapshots
+
+A = DOA.Array_Manifold(0.5, sensor_locations, doa);
+s = DOA.Source_Generate(K, L);
+n = DOA.Noise_Generate(SNR_dB, M, L);
+
+y = A * s + n;
+R = (1 / L) * (y * y');
+
+re_R = real(R);
+im_R = imag(R);
+
+figure;
+imagesc(re_R);
+axis equal tight;
+colorbar;
+title('Re(Desired)');
+
+figure;
+imagesc(im_R);
+axis equal tight;
+colorbar;
+title('Im(Desired)');
+
+%%
+c = R(:);
+R_desired = toeplitz(R);
+re_desired = real(R_desired);
+im_desired = imag(R_desired);
+
+figure;
+imagesc(re_desired);
+axis equal tight;
+colorbar;
+title('Re(Desired)');
+
+figure;
+imagesc(im_desired);
+axis equal tight;
+colorbar;
+title('Im(Desired)');
+%% 
 clear; clc; close all;
 load data_6_sensors_3
 
