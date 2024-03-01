@@ -16,6 +16,26 @@ classdef FunctionsOfDOA
             grid on;
         end
 
+        % DOA Generate
+        function doa = DOA_Generate(~, number_of_sources, phi_min, phi_max, delta_phi)
+            doa = (-2 * delta_phi) * ones(1, number_of_sources);
+            i = 1;
+            while true
+                temp_angle = phi_min + rand * (phi_max - phi_min);
+                temp_array = abs(doa - temp_angle);
+                if any(temp_array < delta_phi * 2)
+                    i = i - 1;
+                else
+                    doa(i) = temp_angle;
+                end
+                if i == number_of_sources
+                    break
+                end
+                i = i + 1;
+            end
+            doa = sort(doa);
+        end
+
         % Source Generate
         function s = Source_Generate(~, number_of_sources, number_of_snapshots, vars)
             if nargin == 3
@@ -120,7 +140,7 @@ classdef FunctionsOfDOA
 
         % MUSIC
         % This function works for a given covariance matrix. I try to use it when I calculate a covariance matrix using spatial smoothing.
-        function spatial_spectrum = MUSIC(~, n, coef, Rz1, sensor_locations)
+        function [spatial_spectrum, angles] = MUSIC(~, n, coef, Rz1, sensor_locations)
             angles = 0:0.5:180;
             spatial_spectrum = zeros(1, length(angles));
 

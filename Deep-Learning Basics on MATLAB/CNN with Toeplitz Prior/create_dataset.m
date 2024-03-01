@@ -1,6 +1,7 @@
 %% Initialization
 
 clear; clc; close all;
+addpath('D:\D\Alp\Master ODTÜ\Thesis\DOA\Codes\Direction-of-Arrival');
 DOA = FunctionsOfDOA();
 
 %% Sensor Properties
@@ -48,6 +49,45 @@ for idx = 1:numOfData
     n = DOA.Noise_Generate(SNR_dB, M, L);
     y = A * s + n;
     R = (1 / L) * (y * y');
+    % maxValue = max(abs(R(:)));
+
+    % A = DOA.Array_Manifold(0.5, sensor_locations, doa);
+    % SNR_dB = -15 + rand * 30;
+    % SNR = 10^(SNR_dB / 10);
+    % R = A * A' + (1 / SNR) * eye(M);
+
+    features(:, :, 1, idx) = real(R);
+    features(:, :, 2, idx) = imag(R);
+end
+
+%% Dataset Preparation CRN1 (1 Source)
+
+M = length(sensor_locations);
+N = sensor_locations(M) + 1;
+
+numOfData = 1200000;
+features = zeros(M, M, 2, numOfData);
+labels = zeros(2 * N, numOfData);
+
+delta_phi = 1;
+phi_min = 30;
+phi_max = 150;
+for idx = 1:numOfData
+    K = 1;
+    doa = phi_min + rand * (phi_max - phi_min);
+    A = DOA.Array_Manifold(0.5, 0:N-1, doa);
+    R = A * A';
+    labels(1:N, idx) = real(R(:, 1));
+    labels(N+1:end, idx) = imag(R(:, 1));
+
+    % original case
+    A = DOA.Array_Manifold(0.5, sensor_locations, doa);
+    L = round((2 * rand - 1) * 100 + 500); % # of snapshots
+    s = DOA.Source_Generate(K, L);
+    SNR_dB = -10 + rand * 25;
+    n = DOA.Noise_Generate(SNR_dB, M, L);
+    y = A * s + n;
+    R = (1 / L) * (y * y');
 
     features(:, :, 1, idx) = real(R);
     features(:, :, 2, idx) = imag(R);
@@ -58,7 +98,7 @@ end
 h5_Format(features_1, "features_1", "/DS1");
 h5_Format(labels_1, "labels_1", "/DS1");
 
-%% JSON FORMATTING (did not work)
+%% JSON FORMATTING (not used)
 
 % Encode the data
 encodedFeatures = jsonencode(features);
@@ -81,7 +121,7 @@ fclose(fid);
 
 disp(['Data saved to ' filename]);
 
-%% CSV FORMATTING (did not work)
+%% CSV FORMATTING (not used)
 
 filename = 'features';
 writematrix(features, filename)
