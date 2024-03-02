@@ -3,6 +3,25 @@ clear; clc; close all;
 
 DOA = FunctionsOfDOA();
 
+sensor_locations = 0:63;
+M = length(sensor_locations);
+
+doa = 30:0.5:150;
+A = DOA.Array_Manifold(0.5, 0:63, doa);
+A = DOA.khatri_rao(conj(A), A);
+% One = (1 / M) * abs(A(:, 1)' * A(:, 1))
+% Zero = (1 / M) * abs(A(:, 1)' * A(:, 2))
+I = (1 / M^2) * (A' * A);
+
+L = 1000;
+s = DOA.Source_Generate(2, L);
+Rs = (1 / L) * (s * s')
+
+%% 
+clear; clc; close all;
+
+DOA = FunctionsOfDOA();
+
 sensor_locations = 0:7;
 M = length(sensor_locations);
 
