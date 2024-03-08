@@ -1,4 +1,4 @@
-classdef CRN_DataStore < matlab.io.Datastore
+classdef CRN_DataStore < matlab.io.Datastore & matlab.io.datastore.Shuffleable
     properties
         Features
         Labels
@@ -23,8 +23,6 @@ classdef CRN_DataStore < matlab.io.Datastore
         
         function [data, info] = read(ds)
             if hasdata(ds)
-                % data = struct('Features', ds.Features(:, :, :, ds.CurrentIndex), ...
-                %               'Labels', ds.Labels(:, ds.CurrentIndex));
                 data{1} = ds.Features(:, :, :, ds.CurrentIndex);
                 data{2} = ds.Labels(:, ds.CurrentIndex);
                 info = struct();
@@ -33,6 +31,12 @@ classdef CRN_DataStore < matlab.io.Datastore
                 data = [];
                 info = struct();
             end
+        end
+
+        function ds = shuffle(ds)
+            shuffledIndices = randperm(ds.NumObservations);
+            ds.Features = ds.Features(:, :, :, shuffledIndices);
+            ds.Labels = ds.Labels(:, shuffledIndices);
         end
 
         function reset(ds)

@@ -1,4 +1,4 @@
-classdef MyDataStore < matlab.io.Datastore
+classdef MyDataStore < matlab.io.Datastore & matlab.io.datastore.Shuffleable
     properties
         Features
         Labels
@@ -30,6 +30,12 @@ classdef MyDataStore < matlab.io.Datastore
                 data = [];
                 info = struct();
             end
+        end
+
+        function ds = shuffle(ds)
+            shuffledIndices = randperm(ds.NumObservations);
+            ds.Features = ds.Features(:, shuffledIndices);
+            ds.Labels = ds.Labels(shuffledIndices);
         end
 
         function reset(ds)
