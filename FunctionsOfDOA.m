@@ -44,7 +44,9 @@ classdef FunctionsOfDOA
             s = zeros(number_of_sources, number_of_snapshots);
             theta = 180 * rand(number_of_sources, 1);
             for i = 1:number_of_sources
-                s(i, :) = sqrt(vars(i)) * exp(1i * pi * (0:number_of_snapshots-1) * cosd(theta(i)));
+                t_initial = randi(number_of_snapshots);
+                t_final = t_initial + number_of_snapshots - 1;
+                s(i, :) = sqrt(vars(i)) * exp(1i * pi * (t_initial:t_final) * cosd(theta(i)));
             end
         end
 
