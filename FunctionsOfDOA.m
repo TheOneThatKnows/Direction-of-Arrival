@@ -367,8 +367,8 @@ classdef FunctionsOfDOA
             end
 
             c = zeros(B-1, 1);
-            c(1) = c_s * exp(1i * pi / 3);
-            c(2:B-1) = c(1) * exp(-1i * pi * (1:B-2).' / 8);
+            c(1) = c_s * exp(1i * rand * 2 * pi);
+            c(2:B-1) = c(1) * exp(-1i * pi * (1:B-2).' / 8) ./ (2:B-1).';
             for i = 1:M-1
                 for j = i+1:M
                     lag = abs(sensor_locations(i) - sensor_locations(j));

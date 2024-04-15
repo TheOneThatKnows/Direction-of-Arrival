@@ -13,16 +13,17 @@ N = sensor_locations(M) + 1;
 
 %% Dataset Preparation I
 
-numOfData = 3100000;
-features = zeros(N*N, numOfData);
+numOfData = 1100000;
+features = zeros(2*N-1, numOfData);
 
-K = 2;          % # of sources
 L = 100;        % # of snapshots
 phi_min = 30;
 phi_max = 150;
-delta_phi = 3;  % angle resolution
-labels = zeros((phi_max - phi_min)/delta_phi + 1, numOfData);
+delta_phi = 1;  % angle resolution
+labels = zeros(1, numOfData);
 for idx = 1:numOfData
+    K = randi(N-1);     % # of sources
+    labels(idx) = K;
     doa = (-2 * delta_phi) * ones(1, K);
     i = 1;
     while true
@@ -39,19 +40,6 @@ for idx = 1:numOfData
         i = i + 1;
     end
     doa = sort(doa);
-
-    for i = 1:K
-        c = floor((doa(i) - phi_min) / delta_phi);
-
-        phi_a = phi_min + c * delta_phi;
-        phi_b = phi_a + delta_phi;
-
-        percentages = [phi_a phi_b; 1 1] \ [doa(i)*100; 100];
-
-        idx1 = c + 1;
-        idx2 = c + 2;
-        labels(idx1:idx2, idx) = labels(idx1:idx2, idx) + percentages;
-    end
 
     A = DOA.Array_Manifold(0.5, sensor_locations, doa);
     s = DOA.Source_Generate(K, L);
@@ -62,37 +50,23 @@ for idx = 1:numOfData
 
     z = R(:);
     z1 = DOA.Rearrange_According_to_Sensor_Locations(z, sensor_locations);
-    R_z1 = zeros(N);
-    for i = 1:N
-        z1_i = z1(i:i + N - 1);
-        R_z1 = R_z1 + (1 / N) * (z1_i * z1_i');
-    end
-
-    re_R_z1 = real(R_z1);
-    im_R_z1 = imag(R_z1);
-
-    features(1:N, idx) = diag(re_R_z1);
-    ind = N + 1;
-    for i = 2:N
-        for j = 1:i-1
-            features(ind:ind+1, idx) = [re_R_z1(i, j); im_R_z1(i, j)];
-            ind = ind + 2;
-        end
-    end
+    z2 = z1(1:N-1);
+    features(:, idx) = [real(z2); z1(N); imag(z2)];
 end
 
 %% Dataset Preparation II
 
-numOfData = 3100000;
+numOfData = 1100000;
 features = zeros(M*M, numOfData);
 
-K = 2;          % # of sources
 L = 100;        % # of snapshots
 phi_min = 30;
 phi_max = 150;
-delta_phi = 3;  % angle resolution
-labels = zeros((phi_max - phi_min)/delta_phi + 1, numOfData);
+delta_phi = 1;  % angle resolution
+labels = zeros(1, numOfData);
 for idx = 1:numOfData
+    K = randi(N-1);     % # of sources
+    labels(idx) = K;
     doa = (-2 * delta_phi) * ones(1, K);
     i = 1;
     while true
@@ -109,19 +83,6 @@ for idx = 1:numOfData
         i = i + 1;
     end
     doa = sort(doa);
-
-    for i = 1:K
-        c = floor((doa(i) - phi_min) / delta_phi);
-
-        phi_a = phi_min + c * delta_phi;
-        phi_b = phi_a + delta_phi;
-
-        percentages = [phi_a phi_b; 1 1] \ [doa(i)*100; 100];
-
-        idx1 = c + 1;
-        idx2 = c + 2;
-        labels(idx1:idx2, idx) = labels(idx1:idx2, idx) + percentages;
-    end
 
     A = DOA.Array_Manifold(0.5, sensor_locations, doa);
     s = DOA.Source_Generate(K, L);
@@ -133,12 +94,13 @@ for idx = 1:numOfData
     re_R = real(R);
     im_R = imag(R);
 
-    features(1:M, idx) = diag(re_R);
+    r(1:M) = diag(re_R);
     ind = M + 1;
     for i = 2:M
         for j = 1:i-1
-            features(ind:ind+1, idx) = [re_R(i, j); im_R(i, j)];
+            r(ind:ind+1) = [re_R(i, j); im_R(i, j)];
             ind = ind + 2;
         end
     end
+    features(:, idx) = r;
 end
