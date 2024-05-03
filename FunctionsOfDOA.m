@@ -52,7 +52,7 @@ classdef FunctionsOfDOA
 
         % Noise Generate
         function v = Noise_Generate(~, SNR_dB, number_of_sensors, number_of_snapshots)
-            v = (1 / 10^(SNR_dB/10)) * (1/sqrt(2)) * (randn(number_of_sensors, number_of_snapshots) + 1i * randn(number_of_sensors, number_of_snapshots));
+            v = sqrt(1 / 10^(SNR_dB/10)) * (1/sqrt(2)) * (randn(number_of_sensors, number_of_snapshots) + 1i * randn(number_of_sensors, number_of_snapshots));
         end
 
         % Array Manifold
