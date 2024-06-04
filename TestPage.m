@@ -1,3 +1,187 @@
+%%
+
+t = 30:3:150;
+x = sind(t);
+
+figure;
+plot(t, x);
+xlim([30 150])
+grid on
+
+%%
+phi_min = 30;
+delta_phi = 3;
+
+x = 128.7;
+
+c = floor((x - phi_min) / delta_phi);
+
+phi_a = phi_min + c * delta_phi;
+phi_b = phi_a + delta_phi;
+
+percentages = [phi_a phi_b; 1 1] \ [x*100; 100]
+
+%%
+clear; clc; close all;
+
+DOA = FunctionsOfDOA();
+coef = 0.5; % unit distance between sensors divided by the wavelength of the signal
+
+sensor_locations = [0 1 4 7 9];
+M = length(sensor_locations);
+
+doa = 60; doa2 = 100; n = 2; % # of sources
+a1 = exp(1i * 2 * pi * coef * sensor_locations.' * cosd(doa));
+a2 = exp(1i * 2 * pi * coef * sensor_locations.' * cosd(doa2));
+N = 100; % # of snapshots
+SNR = 0; % dB
+
+s = DOA.Source_Generate(2, N);
+v = DOA.Noise_Generate(SNR, M, N);
+A = DOA.Array_Manifold(coef, sensor_locations, [doa doa2]);
+
+y = A * s + v;
+
+angles = 0:0.5:180;
+
+% Conventional Beamformer
+power_pattern = zeros(1, length(angles));
+for i = 1:length(angles)
+    h = exp(1i * 2 * pi * coef * sensor_locations.' * cosd(angles(i)));
+    power_pattern(i) = abs(h' * (y * y') * h);
+end
+power_pattern = power_pattern / max(power_pattern);
+% tt = angles;
+% [out1, out2] = findpeaks(10 * log10(power_pattern))
+figure;
+plot(angles, 10 * log10(power_pattern));
+hold on
+
+CBF(angles, sensor_locations, y, doa)
+
+% Capon
+Ry = y * y'; % covariance matrix
+power_pattern2 = zeros(1, length(angles));
+for i = 1:length(angles)
+    a_ = exp(1i * 2 * pi * coef * sensor_locations.' * cosd(angles(i)));
+    h = (inv(Ry) * a_) / (a_' * inv(Ry) * a_);
+    power_pattern2(i) = abs(h' * (y * y') * h);
+end
+power_pattern2 = power_pattern2 / max(power_pattern2);
+plot(angles, 10 * log10(power_pattern2));
+
+% MUSIC
+[eig_vecs, ~] = eig(Ry); % eigen decomposition of the covariance matrix
+G = eig_vecs(:, 1:M-n);  % noise space
+spec = zeros(1, length(angles));
+for j = 1:length(angles)
+    a_ = exp(1i * pi * sensor_locations.' * cos(angles(j) * pi / 180));
+    spec(j) = 1/abs(a_' * (G * G') * a_);
+end
+spec = spec / max(spec);
+plot(angles, 10 * log10(spec))
+title("Minimum Redundant Array Processing")
+xlim([0 180])
+xlabel("phi (degree)")
+legend("Conventional", "Capon", "Music")
+grid on
+
+%%
+clear; clc; close all;
+addpath('D:\D\Alp\Master ODTÜ\Thesis\DOA\Codes\Direction-of-Arrival');
+DOA = FunctionsOfDOA();
+
+s = DOA.Source_Generate(2, 100);
+cov(s(1,:), s(2,:))
+
+%%
+clear; clc; close all;
+
+L = 100;
+n = 0:L-1;
+f1 = 200;
+f2 = 250;
+fs = 4 * max(f1, f2);
+% t = 0:6;
+x = exp(1i * 2 * pi * (f1 / fs) * n);
+y = exp(1i * 2 * pi * (f2 / fs) * n);
+
+v = [var(x); var(y)]
+C = cov(x, y)
+%% 
+% x = zeros(1, length(t));
+% x(1:5) = 1;
+X = fft(x);
+figure;
+plot(n, x, '*');
+figure;
+plot(n, abs(X), '*')
+
+%% 
+clear; clc; close all;
+
+w=[0:0.01:2*pi];
+k=[0:2*pi/10:2*pi];
+Xw = exp(-j*2*w).*sin(5*w/2)./sin(w/2);
+Xk = exp(-j*2*k).*sin(5*k/2)./sin(k/2);
+plot(w,abs(Xw))
+hold
+stem(k,abs(Xk),'r')
+figure
+plot(w,angle(Xw))
+hold
+stem(k,angle(Xk),'r')
+%%
+clear; clc; close all;
+
+DOA = FunctionsOfDOA();
+
+sensor_locations = [0 1 4 7 9];
+M = length(sensor_locations);
+N = sensor_locations(M) + 1;
+
+K = 2;
+L = 100;
+phi_min = 30;
+phi_max = 150;
+delta_phi = 1;  % angle resolution
+
+doa = (-2 * delta_phi) * ones(1, K);
+i = 1;
+while true
+    temp_angle = phi_min + rand * (phi_max - phi_min);
+    temp_array = abs(doa - temp_angle);
+    if any(temp_array < delta_phi)
+        i = i - 1;
+    else
+        doa(i) = temp_angle;
+    end
+    if i == K
+        break
+    end
+    i = i + 1;
+end
+doa = sort(doa);
+
+doa = round(doa);
+
+A = DOA.Array_Manifold(0.5, sensor_locations, doa);
+s = DOA.Source_Generate(K, L);
+SNR_dB = 30 * rand;     % min = 0 dB, max = 30 dB
+n = DOA.Noise_Generate(SNR_dB, M, L);
+y = A * s + n;
+R = (1 / L) * (y * y');
+
+z = R(:);
+[z1, M_v] = DOA.Rearrange_According_to_Sensor_Locations(z, sensor_locations);
+R_z1 = zeros(M_v);
+for i = 1:M_v
+    z1_i = z1(i:i + M_v - 1);
+    R_z1 = R_z1 + (1 / M_v) * (z1_i * z1_i');
+end
+
+
+
 %% 
 clear; clc; close all;
 
@@ -464,7 +648,33 @@ end
 
 
 
+function doa_est = CBF(angles, sensor_locations, y, doa)
+spec = zeros(1, length(angles));
+for i = 1:length(angles)
+    h = exp(1i * pi * sensor_locations.' * cosd(angles(i)));
+    spec(i) = abs(h' * (y * y') * h);
+end
+spec = 10 * log10(spec);
+[mags, inds] = findpeaks(spec);
+doa_est = zeros(2, 1);
+[~, ind] = max(mags);
+idx = inds(ind);
+doa_est(1) = angles(idx);
+mags = [mags(1:ind-1) mags(ind+1:end)];
+inds = [inds(1:ind-1) inds(ind+1:end)];
+[~, ind] = max(mags);
+idx = inds(ind);
+doa_est(2) = angles(idx);
 
+[~, ind] = min(abs(doa - doa_est(1)));
+if ind == 2
+    doa = doa(2:-1:1);
+end
+
+if rmse(doa, [doa_est(1) doa_est(1)]) < rmse(doa, doa_est)
+    doa_est = [doa_est(1) doa_est(1)];
+end
+end
 
 
 
