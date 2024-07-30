@@ -142,7 +142,7 @@ classdef FunctionsOfDOA
         % MUSIC
         % This function works for a given covariance matrix. I try to use it when I calculate a covariance matrix using spatial smoothing.
         function [spatial_spectrum, angles] = MUSIC(~, n, coef, Rz1, sensor_locations, angles)
-            if nargin == 4
+            if nargin == 5
                 angles = 0:0.5:180;
             end
             spatial_spectrum = zeros(1, length(angles));
