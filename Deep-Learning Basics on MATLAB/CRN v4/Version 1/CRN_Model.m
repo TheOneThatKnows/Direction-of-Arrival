@@ -24,6 +24,6 @@ lgraph = [
     leakyReluLayer
     dropoutLayer(0.2)
     fullyConnectedLayer(2*N-1)
-    leakyReluLayer
+    % leakyReluLayer
     regressionLayer
     ];

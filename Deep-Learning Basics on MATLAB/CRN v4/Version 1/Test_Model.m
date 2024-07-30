@@ -5,7 +5,7 @@ clear; clc; close all;
 addpath('D:\D\Alp\Master ODTÜ\Thesis\DOA\Codes\Direction-of-Arrival');
 DOA = FunctionsOfDOA();
 
-load CRN_Network.mat
+load CRN_Network_2.mat
 
 %% Test Case I
 
@@ -47,8 +47,9 @@ feature(:, :, 2) = imag(normalized_R_ohm);
 R_c1 = predict(net, feature).';
 R = r2R(R_c1);
 
-[spatial_spectrum_1, angles] = DOA.MUSIC(K, 0.5, R_ohm, sensor_locations);
-[spatial_spectrum_2, ~] = DOA.MUSIC(K, 0.5, R, 0:N-1);
+angles = phi_min:delta_phi:phi_max;
+spatial_spectrum_1 = DOA.MUSIC(K, 0.5, R_ohm, sensor_locations, angles);
+spatial_spectrum_2 = DOA.MUSIC(K, 0.5, R, 0:N-1, angles);
 
 figure; hold on;
 plot(angles, spatial_spectrum_1);

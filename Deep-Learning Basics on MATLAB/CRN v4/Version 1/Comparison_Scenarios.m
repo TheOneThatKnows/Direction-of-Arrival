@@ -5,7 +5,7 @@ clear; clc; close all;
 addpath('D:\D\Alp\Master ODTÜ\Thesis\DOA\Codes\Direction-of-Arrival');
 DOA = FunctionsOfDOA();
 
-load CRN_Network.mat
+load CRN_Network_2.mat
 
 %% 
 sensor_locations = [0 1 4 7 9]; % MRA with 5 sensors
@@ -63,7 +63,7 @@ for epoch = 1:EPOCHS
         RMSE(3, idx) = RMSE(3, idx) + rmse(doa_est, doa);
 
         % CRN_2 Network
-        R = CRN2_Function(trainedNetwork_1, M, Ry);
+        R = CRN2_Function(net, M, Ry);
         
         spec = MUSIC(angles, 0:N-1, R, M, K);
         doa_est = DOA_Estimator(spec, angles, doa);
