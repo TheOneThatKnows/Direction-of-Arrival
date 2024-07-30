@@ -44,7 +44,7 @@ angles = phi_min:delta_phi:phi_max;
 for epoch = 1:EPOCHS
     while true
         doa = phi_min + rand(1, 2) * (phi_max - phi_min);
-        if abs(doa(2) - doa(1)) > delta_phi
+        if abs(doa(2) - doa(1)) > 2 * delta_phi
             break
         end
     end
@@ -97,11 +97,32 @@ plot(SNR_dB_vals, RMSE(4, :));
 xlabel("SNR (dB)"); ylabel("RMSE");
 legend('CBF', 'Capon', 'MUSIC', 'CRN_2 Network v2.1');
 title('SNR vs RMSE')
-
+%%
+doa_est = DOA_Estimator(spec, angles, doa)
 %% Functions
 
 % DOA Estimator
 function doa_est = DOA_Estimator(spec, angles, doa)
+spec = [0 spec 0];
+[mags, inds] = findpeaks(spec);
+doa_est = zeros(1, 2);
+[~, ind] = max(mags);
+idx = inds(ind);
+doa_est(1) = angles(idx - 1);
+mags = [mags(1:ind-1) mags(ind+1:end)];
+inds = [inds(1:ind-1) inds(ind+1:end)];
+[~, ind] = max(mags);
+idx = inds(ind);
+if isempty(idx)
+    doa_est(2) = doa_est(1);
+else
+    doa_est(2) = angles(idx - 1);
+end
+
+doa_est = sort(doa_est);
+end
+
+function doa_est = DOA_Estimator_2(spec, angles, doa)
 [mags, inds] = findpeaks(spec);
 doa_est = zeros(1, 2);
 [~, ind] = max(mags);
