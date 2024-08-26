@@ -44,7 +44,7 @@ for epoch = 1:EPOCHS
 
         % CBF
         spec = CBF(angles, sensor_locations, y);
-        doa_est = DOA_Estimator(spec, angles, doa);
+        doa_est = DOA_Estimator(spec, angles);
         doa_est = sort(doa_est);
         RMSE(1, idx) = RMSE(1, idx) + rmse(doa_est, doa);
 
@@ -52,19 +52,19 @@ for epoch = 1:EPOCHS
 
         % Capon
         spec = Capon(angles, sensor_locations, y, Ry);
-        doa_est = DOA_Estimator(spec, angles, doa);
+        doa_est = DOA_Estimator(spec, angles);
         doa_est = sort(doa_est);
         RMSE(2, idx) = RMSE(2, idx) + rmse(doa_est, doa);
 
         % MUSIC
         spec = MUSIC(angles, sensor_locations, Ry, M, K);
-        doa_est = DOA_Estimator(spec, angles, doa);
+        doa_est = DOA_Estimator(spec, angles);
         doa_est = sort(doa_est);
         RMSE(3, idx) = RMSE(3, idx) + rmse(doa_est, doa);
 
         % CRN_2 Network
         spec = CRN2_Function(net, M, Ry);
-        doa_est = DOA_Estimator(spec, angles, doa);
+        doa_est = DOA_Estimator(spec, angles);
         doa_est = sort(doa_est);
         RMSE(4, idx) = RMSE(4, idx) + rmse(doa_est, doa);
     end
@@ -89,12 +89,13 @@ title('SNR vs RMSE')
 %% Functions
 
 % DOA Estimator
-function doa_est = DOA_Estimator(spec, angles, doa)
+function doa_est = DOA_Estimator(spec, angles)
+spec = [0 spec 0];
 [mags, inds] = findpeaks(spec);
 doa_est = zeros(1, 2);
 [~, ind] = max(mags);
 idx = inds(ind);
-doa_est(1) = angles(idx);
+doa_est(1) = angles(idx - 1);
 mags = [mags(1:ind-1) mags(ind+1:end)];
 inds = [inds(1:ind-1) inds(ind+1:end)];
 [~, ind] = max(mags);
@@ -102,17 +103,10 @@ idx = inds(ind);
 if isempty(idx)
     doa_est(2) = doa_est(1);
 else
-    doa_est(2) = angles(idx);
+    doa_est(2) = angles(idx - 1);
 end
 
-[~, ind] = min(abs(doa - doa_est(1)));
-if ind == 2
-    doa = doa(2:-1:1);
-end
-
-if rmse(doa, [doa_est(1) doa_est(1)]) < rmse(doa, doa_est)
-    doa_est = [doa_est(1) doa_est(1)];
-end
+doa_est = sort(doa_est);
 end
 
 function doa_est = DOA_Estimator_old(spec, angles, doa)
