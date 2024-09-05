@@ -86,6 +86,18 @@ xlabel("SNR (dB)"); ylabel("RMSE");
 legend('CBF', 'Capon', 'MUSIC', 'CRN_2 Network + MUSIC');
 title('SNR vs RMSE')
 
+%%
+
+figure; hold on;
+plot(SNR_dB_vals, RMSE(1, :), 'b--o');
+plot(SNR_dB_vals, RMSE(2, :), 'r*');
+plot(SNR_dB_vals, RMSE(3, :));
+plot(SNR_dB_vals, RMSE_1D_Sparse_Model);
+plot(SNR_dB_vals, RMSE(4, :));
+xlabel("SNR (dB)"); ylabel("RMSE");
+legend('CBF', 'Capon', 'MUSIC', '1D-Sparse Net', 'CRN_2 Net');
+title('SNR vs RMSE')
+
 %% Functions
 
 % DOA Estimator
