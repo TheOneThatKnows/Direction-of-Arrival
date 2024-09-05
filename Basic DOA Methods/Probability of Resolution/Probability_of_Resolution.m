@@ -110,6 +110,8 @@ end
 
 %% Plot The Graph
 
+angle_seperation = 0.1:0.1:5;
+
 figure; hold on; grid on;
 plot(angle_seperation, prob_of_res(1, :), 'b--o');
 plot(angle_seperation, prob_of_res(2, :), 'r*');

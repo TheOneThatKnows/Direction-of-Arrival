@@ -123,7 +123,7 @@ classdef FunctionsOfDOA
         end
 
         % Capon
-        function spatial_spectrum = Capon(~, coef, Ry, sensor_locations)
+        function spatial_spectrum = Capon(~, coef, Ry, sensor_locations, angles)
             spatial_spectrum = zeros(1, length(angles));
 
             M = length(Ry(:, 1));
