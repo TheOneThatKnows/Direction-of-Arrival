@@ -87,12 +87,16 @@ legend('CBF', 'Capon', 'MUSIC', 'CRN_2 Network + MUSIC');
 title('SNR vs RMSE')
 
 %%
+load RMSE_vals.mat
+load RMSE_Sparse_1D.mat
+
+SNR_dB_vals = -10:1:10;
 
 figure; hold on;
 plot(SNR_dB_vals, RMSE(1, :), 'b--o');
 plot(SNR_dB_vals, RMSE(2, :), 'r*');
 plot(SNR_dB_vals, RMSE(3, :));
-plot(SNR_dB_vals, RMSE_1D_Sparse_Model);
+plot(SNR_dB_vals, RMSE_Sparse_1D);
 plot(SNR_dB_vals, RMSE(4, :));
 xlabel("SNR (dB)"); ylabel("RMSE");
 legend('CBF', 'Capon', 'MUSIC', '1D-Sparse Net', 'CRN_2 Net');
