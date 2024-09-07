@@ -90,6 +90,7 @@ title('SNR vs RMSE')
 load RMSE_vals.mat
 load RMSE_Sparse_1D.mat
 load RMSE_Sparse_DNN.mat
+load RMSE_Sparse_DNN_v3.mat
 
 SNR_dB_vals = -10:1:10;
 
@@ -99,9 +100,10 @@ plot(SNR_dB_vals, RMSE(2, :), 'r*');
 plot(SNR_dB_vals, RMSE(3, :));
 plot(SNR_dB_vals, RMSE_Sparse_1D);
 plot(SNR_dB_vals, RMSE_Sparse_DNN);
+plot(SNR_dB_vals, RMSE_Sparse_DNN_v3);
 plot(SNR_dB_vals, RMSE(4, :));
 xlabel("SNR (dB)"); ylabel("RMSE");
-legend('CBF', 'Capon', 'MUSIC', '1D-Sparse Net', 'DNN-Sparse Array', 'CRN_2 Net');
+legend('CBF', 'Capon', 'MUSIC', '1D-Sparse Net', 'DNN v2', 'DNN v3', 'CRN_2 Net');
 title('SNR vs RMSE')
 
 %% Functions
