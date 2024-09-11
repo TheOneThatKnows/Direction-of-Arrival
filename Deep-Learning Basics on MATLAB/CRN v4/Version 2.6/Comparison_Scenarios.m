@@ -5,7 +5,7 @@ clear; clc; close all;
 addpath('D:\D\Alp\Master ODTÜ\Thesis\DOA\Codes\Direction-of-Arrival');
 DOA = FunctionsOfDOA();
 
-load CRN_Network_2.mat
+load CRN_Network_v2_6.mat
 
 %% 
 sensor_locations = [0 1 4 7 9]; % MRA with 5 sensors
@@ -16,7 +16,7 @@ L = 70;        % # of snapshots
 
 phi_min = 30;
 phi_max = 150;
-delta_phi = 0.5;
+delta_phi = 1;
 
 SNR_dB_vals = -10:1:10;
 EPOCHS = 5000;
@@ -63,9 +63,7 @@ for epoch = 1:EPOCHS
         RMSE(3, idx) = RMSE(3, idx) + rmse(doa_est, doa);
 
         % CRN_2 Network
-        R = CRN2_Function(net, M, Ry);
-        
-        spec = MUSIC(angles, 0:N-1, R, N, K);
+        spec = CRN2_Function(net, M, Ry);
         doa_est = DOA_Estimator(spec, angles);
         doa_est = sort(doa_est);
         RMSE(4, idx) = RMSE(4, idx) + rmse(doa_est, doa);
@@ -74,7 +72,10 @@ for epoch = 1:EPOCHS
         disp(epoch)
     end
 end
-RMSE = (1 / EPOCHS) * RMSE;
+
+% RMSE = (1 / EPOCHS) * RMSE;
+temp_RMSE = RMSE;
+RMSE = (1 / (epoch - 1)) * RMSE;
 
 figure; hold on;
 plot(SNR_dB_vals, RMSE(1, :), 'b--o');
@@ -82,7 +83,7 @@ plot(SNR_dB_vals, RMSE(2, :), 'r*');
 plot(SNR_dB_vals, RMSE(3, :));
 plot(SNR_dB_vals, RMSE(4, :));
 xlabel("SNR (dB)"); ylabel("RMSE");
-legend('CBF', 'Capon', 'MUSIC', 'CRN_2 Network + MUSIC');
+legend('CBF', 'Capon', 'MUSIC', 'CRN_2 Network');
 title('SNR vs RMSE')
 
 %% Functions
@@ -178,19 +179,15 @@ end
 end
 
 % CRN2
-function R = r2R(r)
-N = (length(r) + 1) * 0.5;
-R_c1 = r(1:N) + 1i * [0; r(N+1:end)];
-R = toeplitz(R_c1');
-end
 
-function R = CRN2_Function(net, M, R_ohm)
+function spec = CRN2_Function(net, M, R_ohm)
 normalized_R_ohm = R_ohm / max(diag(abs(R_ohm)));
 
-feature = zeros(M, M, 2);
+feature = zeros(M, M, 3);
 feature(:, :, 1) = real(normalized_R_ohm);
 feature(:, :, 2) = imag(normalized_R_ohm);
+feature(:, :, 3) = angle(R_ohm) / pi;
 
-R_c1 = predict(net, feature).';
-R = r2R(R_c1);
+spec = predict(net, feature);
+spec = spec / max(spec);
 end
