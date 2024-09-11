@@ -1,0 +1,46 @@
+Version 1 
+Input is the estimated covariance matrix
+Output is the column vector of the covariance matrix of ULA
+We apply MUSIC
+
+Version 2 
+Input is the estimated covariance matrix
+Output is the column vector of the covariance matrix of ULA
+We apply MUSIC
+
+Version 2.1 
+Input is the output of Version 2 network
+Output is the spectrum where peaks correspond to doa angles
+
+Version 2.2 
+Union of Version 2 and Version 2.1
+Input is the estimated covariance matrix
+Output is the spectrum where peaks correspond to doa angles
+
+Version 2.3 
+Gridless version of Version 2.2
+
+Version 2.4 
+Similar to Version 2.2
+There are 3 inputs: 
+- Real part of the estimated covariance matrix
+- Imaginary part of the estimated covariance matrix
+- The estimated covariance matrix itself
+
+Version 2.5 
+Similar to Version 2.2
+There are 3 inputs: 
+- Real part of the estimated covariance matrix 
+- Imaginary part of the estimated covariance matrix 
+- Phase of the estimated covariance matrix 
+
+Version 2.6 
+Similar to Version 1 and Version 2.5
+There is 1 input which has three dimensions: 
+- Real part of the estimated covariance matrix 
+- Imaginary part of the estimated covariance matrix 
+- Phase of the estimated covariance matrix 
+
+Version 2.7 
+Similar to Version 2.2
+- Instead of 1D convolution layers, MLP is used
