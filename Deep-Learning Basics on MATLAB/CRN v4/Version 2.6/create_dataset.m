@@ -14,7 +14,7 @@ DOA = FunctionsOfDOA();
 
 sensor_locations = [0 1 4 7 9]; % SLA with 5 sensors
 
-%% Dataset Preparation CRN2 (2 Source)
+%% Dataset Preparation CRN2 (# of Sources = K)
 
 M = length(sensor_locations);
 N = sensor_locations(M) + 1;
@@ -29,8 +29,8 @@ Q = (phi_max - phi_min) / delta_phi + 1;
 features = zeros(M, M, 3, numOfData);
 labels = zeros(Q, numOfData);
 
+K = 3;
 for idx = 1:numOfData
-    K = 2;
     doa = (-2 * delta_phi) * ones(1, K);
     i = 1;
     while true

@@ -5,13 +5,13 @@ clear; clc; close all;
 addpath('D:\D\Alp\Master ODTÜ\Thesis\DOA\Codes\Direction-of-Arrival');
 DOA = FunctionsOfDOA();
 
-load CRN_Network_v2_6.mat
+load CRN_Network_v2_6_K3.mat
 
 %% 
 sensor_locations = [0 1 4 7 9]; % MRA with 5 sensors
 M = length(sensor_locations);
 N = sensor_locations(M) + 1;
-K = 2;          % # of sources
+K = 3;          % # of sources
 L = 70;        % # of snapshots
 
 phi_min = 30;
@@ -27,13 +27,14 @@ RMSE = zeros(noOfMethods, length(SNR_dB_vals));
 angles = phi_min:delta_phi:phi_max;
 
 for epoch = 1:EPOCHS
-    while true
-        doa = phi_min + rand(1, 2) * (phi_max - phi_min);
-        if abs(doa(2) - doa(1)) > delta_phi
-            break
-        end
-    end
-    doa = sort(doa);
+    % while true
+    %     doa = phi_min + rand(1, 2) * (phi_max - phi_min);
+    %     if abs(doa(2) - doa(1)) > delta_phi
+    %         break
+    %     end
+    % end
+    % doa = sort(doa);
+    doa = DOA.DOA_Generate(K, phi_min, phi_max, delta_phi);
 
     s = DOA.Source_Generate(K, L);
     A = DOA.Array_Manifold(0.5, sensor_locations, doa);
@@ -44,7 +45,7 @@ for epoch = 1:EPOCHS
 
         % CBF
         spec = CBF(angles, sensor_locations, y);
-        doa_est = DOA_Estimator(spec, angles);
+        doa_est = DOA_Estimator(spec, angles, K);
         doa_est = sort(doa_est);
         RMSE(1, idx) = RMSE(1, idx) + rmse(doa_est, doa);
 
@@ -52,19 +53,19 @@ for epoch = 1:EPOCHS
 
         % Capon
         spec = Capon(angles, sensor_locations, y, Ry);
-        doa_est = DOA_Estimator(spec, angles);
+        doa_est = DOA_Estimator(spec, angles, K);
         doa_est = sort(doa_est);
         RMSE(2, idx) = RMSE(2, idx) + rmse(doa_est, doa);
 
         % MUSIC
         spec = MUSIC(angles, sensor_locations, Ry, M, K);
-        doa_est = DOA_Estimator(spec, angles);
+        doa_est = DOA_Estimator(spec, angles, K);
         doa_est = sort(doa_est);
         RMSE(3, idx) = RMSE(3, idx) + rmse(doa_est, doa);
 
         % CRN_2 Network
         spec = CRN2_Function(net, M, Ry);
-        doa_est = DOA_Estimator(spec, angles);
+        doa_est = DOA_Estimator(spec, angles, K);
         doa_est = sort(doa_est);
         RMSE(4, idx) = RMSE(4, idx) + rmse(doa_est, doa);
     end
@@ -84,26 +85,31 @@ plot(SNR_dB_vals, RMSE(3, :));
 plot(SNR_dB_vals, RMSE(4, :));
 xlabel("SNR (dB)"); ylabel("RMSE");
 legend('CBF', 'Capon', 'MUSIC', 'CRN_2 Network');
-title('SNR vs RMSE')
+title_text = "SNR vs RMSE (K=" + K + ")";
+title(title_text)
 
 %% Functions
 
 % DOA Estimator
-function doa_est = DOA_Estimator(spec, angles)
+function doa_est = DOA_Estimator(spec, angles, K)
 spec = [0 spec 0];
 [mags, inds] = findpeaks(spec);
-doa_est = zeros(1, 2);
+doa_est = zeros(1, K);
 [~, ind] = max(mags);
 idx = inds(ind);
 doa_est(1) = angles(idx - 1);
-mags = [mags(1:ind-1) mags(ind+1:end)];
-inds = [inds(1:ind-1) inds(ind+1:end)];
-[~, ind] = max(mags);
-idx = inds(ind);
-if isempty(idx)
-    doa_est(2) = doa_est(1);
-else
-    doa_est(2) = angles(idx - 1);
+
+for i = 2:K
+    mags = [mags(1:ind-1) mags(ind+1:end)];
+    inds = [inds(1:ind-1) inds(ind+1:end)];
+    [~, ind] = max(mags);
+    idx = inds(ind);
+    if isempty(idx)
+        doa_est(i:K) = doa_est(i-1);
+        break
+    else
+        doa_est(i) = angles(idx - 1);
+    end
 end
 
 doa_est = sort(doa_est);
