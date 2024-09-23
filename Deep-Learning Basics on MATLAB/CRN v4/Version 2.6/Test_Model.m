@@ -5,24 +5,25 @@ clear; clc; close all;
 addpath('D:\D\Alp\Master ODTÜ\Thesis\DOA\Codes\Direction-of-Arrival');
 DOA = FunctionsOfDOA();
 
-load CRN_Network_v2_6_K3.mat
+load CRN_Network_v2_6_K6.mat
 
 %% Test Case I
 
-Test(net, DOA)
+[ss_crn, ss_music, angles] = Test(net, DOA);
 
 %%
 
-function Test(net, DOA)
+function [spatial_spectrum_1, spatial_spectrum_2, angles] = Test(net, DOA)
 sensor_locations = [0 1 4 7 9];
 M = length(sensor_locations);
+N = sensor_locations(end) + 1;
 
 feature = zeros(M, M, 3);
 
 delta_phi = 1;
 phi_min = 30;
 phi_max = 150;
-K = 3;
+K = 6;
 doa = DOA.DOA_Generate(K, phi_min, phi_max, delta_phi);
 
 A_ohm = DOA.Array_Manifold(0.5, sensor_locations, doa);
@@ -40,13 +41,21 @@ feature(:, :, 3) = angle(R_ohm) / pi;
 
 spatial_spectrum_1 = predict(net, feature).';
 spatial_spectrum_1 = spatial_spectrum_1 / max(spatial_spectrum_1);
+
+z = R_ohm(:);
+z1 = DOA.Rearrange_According_to_Sensor_Locations(z, sensor_locations);
+R_z1 = zeros(N);
+for i = 1:N
+    z1_i = z1(i:i + N - 1);
+    R_z1 = R_z1 + (1 / N) * (z1_i * z1_i');
+end
 angles = phi_min:delta_phi:phi_max;
-spatial_spectrum_2 = DOA.MUSIC(K, 0.5, R_ohm, sensor_locations, angles);
+spatial_spectrum_2 = DOA.MUSIC(K, 0.5, R_z1, 0:N-1, angles);
 
 figure; hold on;
 plot(angles, spatial_spectrum_1);
 plot(angles, spatial_spectrum_2);
-legend('Net', 'MUSIC');
+legend('Net', 'SS-MUSIC');
 title_text = "Spectrum Comparison, DOAs: ";
 for i = 1:K
     title_text = title_text + " " + doa(i);

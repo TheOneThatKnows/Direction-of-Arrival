@@ -15,7 +15,7 @@ dsTest = MyDataStore(X_Test, Y_Test);
 
 %% Opening up space in RAM
 
-clear features lables X_Train Y_Train X_Test Y_Test
+clear features lables X_Train Y_Train X_Test Y_Test dsTest
 
 %%
 
@@ -25,8 +25,8 @@ options = trainingOptions('adam', ...
     'MaxEpochs', 12, ...
     'MiniBatchSize', 128, ...
     'Shuffle', 'every-epoch', ...
-    'Plots', 'training-progress', ...
-    'ValidationData', dsTest);
+    'Plots', 'training-progress');
+% 'ValidationData', dsTest
 
 %%
 

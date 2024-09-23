@@ -5,13 +5,13 @@ clear; clc; close all;
 addpath('D:\D\Alp\Master ODTÜ\Thesis\DOA\Codes\Direction-of-Arrival');
 DOA = FunctionsOfDOA();
 
-load CRN_Network_v2_6_K3.mat
+load CRN_Network_v2_6_K7.mat
 
 %% 
 sensor_locations = [0 1 4 7 9]; % MRA with 5 sensors
 M = length(sensor_locations);
 N = sensor_locations(M) + 1;
-K = 3;          % # of sources
+K = 7;          % # of sources
 L = 70;        % # of snapshots
 
 phi_min = 30;
@@ -57,8 +57,16 @@ for epoch = 1:EPOCHS
         doa_est = sort(doa_est);
         RMSE(2, idx) = RMSE(2, idx) + rmse(doa_est, doa);
 
-        % MUSIC
-        spec = MUSIC(angles, sensor_locations, Ry, M, K);
+        % SS-MUSIC
+        z = Ry(:);
+        z1 = DOA.Rearrange_According_to_Sensor_Locations(z, sensor_locations);
+        R_z1 = zeros(N);
+        for i = 1:N
+            z1_i = z1(i:i + N - 1);
+            R_z1 = R_z1 + (1 / N) * (z1_i * z1_i');
+        end
+        % spec = MUSIC(angles, sensor_locations, Ry, M, K);
+        spec = MUSIC(angles, 0:N-1, R_z1, N, K);
         doa_est = DOA_Estimator(spec, angles, K);
         doa_est = sort(doa_est);
         RMSE(3, idx) = RMSE(3, idx) + rmse(doa_est, doa);
@@ -77,17 +85,18 @@ end
 % RMSE = (1 / EPOCHS) * RMSE;
 temp_RMSE = RMSE;
 RMSE = (1 / (epoch - 1)) * RMSE;
-
+%%
 figure; hold on;
 plot(SNR_dB_vals, RMSE(1, :), 'b--o');
 plot(SNR_dB_vals, RMSE(2, :), 'r*');
 plot(SNR_dB_vals, RMSE(3, :));
 plot(SNR_dB_vals, RMSE(4, :));
 xlabel("SNR (dB)"); ylabel("RMSE");
-legend('CBF', 'Capon', 'MUSIC', 'CRN_2 Network');
+net_name = "CRN_" + K + " Network";
+legend('CBF', 'Capon', 'SS-MUSIC', net_name);
 title_text = "SNR vs RMSE (K=" + K + ")";
 title(title_text)
-
+ylim([0 19])
 %% Functions
 
 % DOA Estimator
