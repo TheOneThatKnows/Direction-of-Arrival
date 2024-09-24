@@ -29,7 +29,7 @@ Q = (phi_max - phi_min) / delta_phi + 1;
 features = zeros(M, M, 3, numOfData);
 labels = zeros(Q, numOfData);
 
-K = 7;
+K = 3;
 for idx = 1:numOfData
     doa = (-2 * delta_phi) * ones(1, K);
     i = 1;

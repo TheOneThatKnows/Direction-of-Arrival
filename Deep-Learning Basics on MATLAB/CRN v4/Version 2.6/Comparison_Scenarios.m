@@ -5,13 +5,13 @@ clear; clc; close all;
 addpath('D:\D\Alp\Master ODTÜ\Thesis\DOA\Codes\Direction-of-Arrival');
 DOA = FunctionsOfDOA();
 
-load CRN_Network_v2_6_K7.mat
+load CRN_Network_v2_6_K3.mat
 
 %% 
 sensor_locations = [0 1 4 7 9]; % MRA with 5 sensors
 M = length(sensor_locations);
 N = sensor_locations(M) + 1;
-K = 7;          % # of sources
+K = 3;          % # of sources
 L = 70;        % # of snapshots
 
 phi_min = 30;
@@ -96,7 +96,7 @@ net_name = "CRN_" + K + " Network";
 legend('CBF', 'Capon', 'SS-MUSIC', net_name);
 title_text = "SNR vs RMSE (K=" + K + ")";
 title(title_text)
-ylim([0 19])
+% ylim([0 25])
 %% Functions
 
 % DOA Estimator
