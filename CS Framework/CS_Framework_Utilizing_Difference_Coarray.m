@@ -9,11 +9,18 @@ classdef CS_Framework_Utilizing_Difference_Coarray
         mu;
     end
     methods
-        function obj = CS_Framework_Utilizing_Difference_Coarray(z, A)
+        function obj = CS_Framework_Utilizing_Difference_Coarray(z, A, mu)
             obj.z = z;
             obj.A = A;
             [~, Kg] = size(A);
             obj.sg = 0.001 * ones(Kg, 1);
+
+            if nargin == 2
+                obj.mu = [1; 0.1];
+                return
+            end
+
+            obj.mu = mu;
         end
 
         function cost = Cost_Function(obj, sg)
@@ -27,13 +34,7 @@ classdef CS_Framework_Utilizing_Difference_Coarray
             gradient = obj.mu(1) * first_term + obj.mu(2) * second_term;
         end
         
-        function obj = Steepest_Descent_DOA(obj, mu)
-            if nargin == 1
-                obj.mu = [1; 0.1];
-            else
-                obj.mu = mu;
-            end
-
+        function obj = Steepest_Descent_DOA(obj)
             cost_vector = zeros(500, 1);
             cost_idx = 1;
             while true
