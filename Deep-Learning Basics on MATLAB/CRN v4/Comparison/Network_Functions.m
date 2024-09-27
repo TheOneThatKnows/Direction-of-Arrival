@@ -37,6 +37,18 @@ classdef Network_Functions
             spec = spec / max(spec);
         end
 
+        function spec = CRN2_Function_v2_3(~, net, M, R_ohm)
+            normalized_R_ohm = R_ohm / max(diag(abs(R_ohm)));
+
+            feature = zeros(M, M, 3);
+            feature(:, :, 1) = real(normalized_R_ohm);
+            feature(:, :, 2) = imag(normalized_R_ohm);
+            feature(:, :, 3) = angle(R_ohm) / pi;
+
+            spec = predict(net, feature);
+            spec = spec / max(spec);
+        end
+
         function spec = CRN2_Function_v2_4(~, net, M, R_ohm)
             normalized_R_ohm = R_ohm / max(diag(abs(R_ohm)));
 

@@ -26,7 +26,7 @@ delta_phi = 1;
 SNR_dB_vals = -10:1:10;
 EPOCHS = 5000;
 
-noOfMethods = 14;
+noOfMethods = 15;
 RMSE = zeros(noOfMethods, length(SNR_dB_vals));
 
 angles = phi_min:delta_phi:phi_max;
@@ -89,53 +89,59 @@ for epoch = 1:EPOCHS
         doa_est = sort(doa_est);
         RMSE(6, idx) = RMSE(6, idx) + rmse(doa_est, doa);
 
+        % CRN_2 v2.3
+        spec = NET.CRN2_Function_v2_3(CRN_v2_3, M, Ry);
+        doa_est = DOA_Estimator_Gridless(spec, phi_min-3:3:phi_max+3);
+        doa_est = sort(doa_est);
+        RMSE(7, idx) = RMSE(7, idx) + rmse(doa_est, doa);
+
         % CRN_2 v2.4
         spec = NET.CRN2_Function_v2_4(CRN_v2_4, M, Ry);
         doa_est = DOA_Estimator(spec, angles);
         doa_est = sort(doa_est);
-        RMSE(7, idx) = RMSE(7, idx) + rmse(doa_est, doa);
+        RMSE(8, idx) = RMSE(8, idx) + rmse(doa_est, doa);
 
         % CRN_2 v2.5
         spec = NET.CRN2_Function_v2_5(CRN_v2_5, M, Ry);
         doa_est = DOA_Estimator(spec, angles);
         doa_est = sort(doa_est);
-        RMSE(8, idx) = RMSE(8, idx) + rmse(doa_est, doa);
+        RMSE(9, idx) = RMSE(9, idx) + rmse(doa_est, doa);
 
         % CRN_2 v2.6
         spec = NET.CRN2_Function_v2_6(CRN_v2_6, M, Ry);
         doa_est = DOA_Estimator(spec, angles);
         doa_est = sort(doa_est);
-        RMSE(9, idx) = RMSE(9, idx) + rmse(doa_est, doa);
+        RMSE(10, idx) = RMSE(10, idx) + rmse(doa_est, doa);
 
         % CRN_2 v2.7
         spec = NET.CRN2_Function_v2_7(CRN_v2_7, M, Ry);
         doa_est = DOA_Estimator(spec, angles);
         doa_est = sort(doa_est);
-        RMSE(10, idx) = RMSE(10, idx) + rmse(doa_est, doa);
+        RMSE(11, idx) = RMSE(11, idx) + rmse(doa_est, doa);
 
         % CRN_2 v2.8
         spec = NET.CRN2_Function_v2_8(CRN_v2_8, M, Ry);
         doa_est = DOA_Estimator(spec, angles);
         doa_est = sort(doa_est);
-        RMSE(11, idx) = RMSE(11, idx) + rmse(doa_est, doa);
+        RMSE(12, idx) = RMSE(12, idx) + rmse(doa_est, doa);
 
         % DNN v2
         spec = NET.SparseDNN_Function_v2(DNN_v2, M, Ry);
         doa_est = DOA_Estimator(spec, angles);
         doa_est = sort(doa_est);
-        RMSE(12, idx) = RMSE(12, idx) + rmse(doa_est, doa);
+        RMSE(13, idx) = RMSE(13, idx) + rmse(doa_est, doa);
 
         % DNN v3
         spec = NET.SparseDNN_Function_v3(DNN_v3, N, Ry, DOA, sensor_locations);
         doa_est = DOA_Estimator(spec, angles);
         doa_est = sort(doa_est);
-        RMSE(13, idx) = RMSE(13, idx) + rmse(doa_est, doa);
+        RMSE(14, idx) = RMSE(14, idx) + rmse(doa_est, doa);
 
         % Sparse 1D
         spec = NET.Sparse_1D_Function(Sparse_1D_Net, Ry, DOA, A_sparse);
         doa_est = DOA_Estimator(spec, angles);
         doa_est = sort(doa_est);
-        RMSE(14, idx) = RMSE(14, idx) + rmse(doa_est, doa);
+        RMSE(15, idx) = RMSE(15, idx) + rmse(doa_est, doa);
     end
     if rem(epoch, 10) == 0
         disp(epoch)
@@ -192,6 +198,27 @@ if isempty(idx)
     doa_est(2) = doa_est(1);
 else
     doa_est(2) = angles(idx - 1);
+end
+
+doa_est = sort(doa_est);
+end
+
+% DOA Estimator Gridless
+function doa_est = DOA_Estimator_Gridless(spec, angles)
+spec = [0 spec 0];
+[mags, inds] = findpeaks(spec);
+doa_est = zeros(1, 2);
+[~, ind] = max(mags);
+idx = inds(ind);
+doa_est(1) = ([angles(idx-1) angles(idx) angles(idx+1)] * [spec(idx-1) spec(idx) spec(idx+1)].') / sum(spec(idx-1:idx+1));
+mags = [mags(1:ind-1) mags(ind+1:end)];
+inds = [inds(1:ind-1) inds(ind+1:end)];
+[~, ind] = max(mags);
+idx = inds(ind);
+if isempty(idx)
+    doa_est(2) = doa_est(1);
+else
+    doa_est(2) = ([angles(idx-1) angles(idx) angles(idx+1)] * [spec(idx-1) spec(idx) spec(idx+1)].') / sum(spec(idx-1:idx+1));
 end
 
 doa_est = sort(doa_est);

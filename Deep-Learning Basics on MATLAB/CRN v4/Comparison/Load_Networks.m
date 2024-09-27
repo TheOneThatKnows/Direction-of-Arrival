@@ -30,6 +30,13 @@ load CRN_Network_v2_2.mat
 CRN_v2_2 = net;
 clear net
 
+% CRN v2.3
+addpath(['D:\D\Alp\Master ODTÜ\Thesis\DOA\Codes\Direction-of-Arrival' ...
+    '\Deep-Learning Basics on MATLAB\CRN v4\Version 2.3']);
+load CRN_Network_v2_3.mat
+CRN_v2_3 = net;
+clear net
+
 % CRN v2.4
 
 addpath(['D:\D\Alp\Master ODTÜ\Thesis\DOA\Codes\Direction-of-Arrival' ...
