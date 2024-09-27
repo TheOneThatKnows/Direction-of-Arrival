@@ -5,7 +5,7 @@ clear; clc; close all;
 addpath('D:\D\Alp\Master ODTÜ\Thesis\DOA\Codes\Direction-of-Arrival');
 DOA = FunctionsOfDOA();
 
-load CRN_Network_v2_3_v2.mat
+load CRN_Network_v2_3.mat
 crn_net_v2_3 = net;
 
 clear net
@@ -21,7 +21,7 @@ sensor_locations = [0 1 4 7 9];
 M = length(sensor_locations);
 N = sensor_locations(M) + 1;
 
-feature = zeros(M, M, 2);
+feature = zeros(M, M, 3);
 
 delta_phi = 3;
 phi_min = 30;
@@ -45,9 +45,10 @@ normalized_R_ohm = R_ohm / max(diag(abs(R_ohm)));
 
 feature(:, :, 1) = real(normalized_R_ohm);
 feature(:, :, 2) = imag(normalized_R_ohm);
+feature(:, :, 3) = imag(normalized_R_ohm);
 
 angles_2 = phi_min:delta_phi:phi_max;
-spec_2 = predict(net, feature(:, :, 1), feature(:, :, 2)).';
+spec_2 = predict(net, feature).';
 
 angles_1 = 30:1:150;
 spec_1 = DOA.MUSIC(K, 0.5, R_ohm, sensor_locations, angles_1);

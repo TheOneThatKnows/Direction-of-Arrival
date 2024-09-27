@@ -23,9 +23,8 @@ classdef MyDataStore < matlab.io.Datastore & matlab.io.datastore.Shuffleable
         
         function [data, info] = read(ds)
             if hasdata(ds)
-                data{1} = ds.Features(:, :, 1, ds.CurrentIndex);
-                data{2} = ds.Features(:, :, 2, ds.CurrentIndex);
-                data{3} = ds.Labels(:, ds.CurrentIndex);
+                data{1} = ds.Features(:, :, :, ds.CurrentIndex);
+                data{2} = ds.Labels(:, ds.CurrentIndex);
                 info = struct();
                 ds.CurrentIndex = ds.CurrentIndex + 1;
             else

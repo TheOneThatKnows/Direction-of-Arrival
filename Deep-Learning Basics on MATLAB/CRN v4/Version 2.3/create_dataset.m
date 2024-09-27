@@ -27,7 +27,7 @@ phi_min = 30;
 phi_max = 150;
 Q = (phi_max - phi_min) / delta_phi + 1;
 
-features = zeros(M, M, 2, numOfData);
+features = zeros(M, M, 3, numOfData);
 labels = zeros(Q, numOfData);
 
 for idx = 1:numOfData
@@ -73,4 +73,5 @@ for idx = 1:numOfData
 
     features(:, :, 1, idx) = real(normalized_R_ohm);
     features(:, :, 2, idx) = imag(normalized_R_ohm);
+    features(:, :, 3, idx) = angle(R_ohm) / pi;
 end

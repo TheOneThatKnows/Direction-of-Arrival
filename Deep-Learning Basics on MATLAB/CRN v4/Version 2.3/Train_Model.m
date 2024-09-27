@@ -13,6 +13,10 @@ Y_Test = labels(:, split_idx+1:idx);
 dsTrain = MyDataStore(X_Train, Y_Train);
 dsTest = MyDataStore(X_Test, Y_Test);
 
+%% Opening up space in RAM
+
+clear features lables X_Train Y_Train X_Test Y_Test dsTest
+
 %%
 
 % Compile the model with specified loss function

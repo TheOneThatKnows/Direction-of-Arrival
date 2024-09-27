@@ -5,7 +5,15 @@ clear; clc; close all;
 addpath('D:\D\Alp\Master ODTÜ\Thesis\DOA\Codes\Direction-of-Arrival');
 DOA = FunctionsOfDOA();
 
-load CRN_Network_v2_2.mat
+load CRN_Network_v2_3.mat
+CRN_v2_3 = net;
+clear net
+
+addpath(['D:\D\Alp\Master ODTÜ\Thesis\DOA\Codes\Direction-of-Arrival' ...
+    '\Deep-Learning Basics on MATLAB\CRN v4\Version 2.6']);
+load CRN_Network_v2_6.mat
+CRN_v2_6 = net;
+clear net
 
 %% 
 sensor_locations = [0 1 4 7 9]; % MRA with 5 sensors
@@ -21,7 +29,7 @@ delta_phi = 1;
 SNR_dB_vals = -10:1:10;
 EPOCHS = 5000;
 
-noOfMethods = 4;
+noOfMethods = 5;
 RMSE = zeros(noOfMethods, length(SNR_dB_vals));
 
 angles = phi_min:delta_phi:phi_max;
@@ -62,11 +70,17 @@ for epoch = 1:EPOCHS
         doa_est = sort(doa_est);
         RMSE(3, idx) = RMSE(3, idx) + rmse(doa_est, doa);
 
-        % CRN_2 Network
-        spec = CRN2_Function(net, M, Ry);
-        doa_est = DOA_Estimator(spec, angles);
+        % CRN_2 Network v3
+        spec = CRN2_Function(CRN_v2_3, M, Ry);
+        doa_est = DOA_Estimator_Gridless(spec, phi_min-3:3:phi_max+3);
         doa_est = sort(doa_est);
         RMSE(4, idx) = RMSE(4, idx) + rmse(doa_est, doa);
+
+        % CRN_2 Network v6
+        spec = CRN2_Function(CRN_v2_6, M, Ry);
+        doa_est = DOA_Estimator(spec, angles);
+        doa_est = sort(doa_est);
+        RMSE(5, idx) = RMSE(5, idx) + rmse(doa_est, doa);
     end
     if rem(epoch, 10) == 0
         disp(epoch)
@@ -76,14 +90,15 @@ end
 % RMSE = (1 / EPOCHS) * RMSE;
 temp_RMSE = RMSE;
 RMSE = (1 / (epoch - 1)) * RMSE;
-
+%%
 figure; hold on;
 plot(SNR_dB_vals, RMSE(1, :), 'b--o');
 plot(SNR_dB_vals, RMSE(2, :), 'r*');
 plot(SNR_dB_vals, RMSE(3, :));
 plot(SNR_dB_vals, RMSE(4, :));
+plot(SNR_dB_vals, RMSE(5, :));
 xlabel("SNR (dB)"); ylabel("RMSE");
-legend('CBF', 'Capon', 'MUSIC', 'CRN_2 Network + MUSIC');
+legend('CBF', 'Capon', 'MUSIC', 'CRN_2 Network v3', 'CRN_2 Network v6');
 title('SNR vs RMSE')
 
 %% Functions
@@ -104,6 +119,27 @@ if isempty(idx)
     doa_est(2) = doa_est(1);
 else
     doa_est(2) = angles(idx - 1);
+end
+
+doa_est = sort(doa_est);
+end
+
+% DOA Estimator
+function doa_est = DOA_Estimator_Gridless(spec, angles)
+spec = [0 spec 0];
+[mags, inds] = findpeaks(spec);
+doa_est = zeros(1, 2);
+[~, ind] = max(mags);
+idx = inds(ind);
+doa_est(1) = ([angles(idx-1) angles(idx) angles(idx+1)] * [spec(idx-1) spec(idx) spec(idx+1)].') / sum(spec(idx-1:idx+1));
+mags = [mags(1:ind-1) mags(ind+1:end)];
+inds = [inds(1:ind-1) inds(ind+1:end)];
+[~, ind] = max(mags);
+idx = inds(ind);
+if isempty(idx)
+    doa_est(2) = doa_est(1);
+else
+    doa_est(2) = ([angles(idx-1) angles(idx) angles(idx+1)] * [spec(idx-1) spec(idx) spec(idx+1)].') / sum(spec(idx-1:idx+1));
 end
 
 doa_est = sort(doa_est);
@@ -183,10 +219,11 @@ end
 function spec = CRN2_Function(net, M, R_ohm)
 normalized_R_ohm = R_ohm / max(diag(abs(R_ohm)));
 
-feature = zeros(M, M, 2);
+feature = zeros(M, M, 3);
 feature(:, :, 1) = real(normalized_R_ohm);
 feature(:, :, 2) = imag(normalized_R_ohm);
+feature(:, :, 3) = angle(R_ohm) / pi;
 
-spec = predict(net, feature(:, :, 1), feature(:, :, 2));
+spec = predict(net, feature);
 spec = spec / max(spec);
 end
