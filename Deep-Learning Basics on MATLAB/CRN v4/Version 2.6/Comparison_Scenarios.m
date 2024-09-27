@@ -5,6 +5,8 @@ clear; clc; close all;
 addpath('D:\D\Alp\Master ODTÜ\Thesis\DOA\Codes\Direction-of-Arrival');
 DOA = FunctionsOfDOA();
 
+addpath('D:\D\Alp\Master ODTÜ\Thesis\DOA\Codes\Direction-of-Arrival\Deep-Learning Basics on MATLAB\Custom Layers');
+
 load CRN_Network_v2_6_K3.mat
 
 %% 
