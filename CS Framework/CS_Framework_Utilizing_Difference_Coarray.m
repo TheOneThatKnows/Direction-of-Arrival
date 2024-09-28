@@ -46,8 +46,8 @@ classdef CS_Framework_Utilizing_Difference_Coarray
                 cost_vector(cost_idx) = cost;
                 if cost_vector(20) ~= 0
                     local_mean = mean(cost_vector(cost_idx-19:cost_idx));
-                    if abs(cost - local_mean) < 0.01
-                        cost
+                    if abs(cost - local_mean) < 0.01 || cost_idx == 500
+                        % cost
                         break
                     end
                 end

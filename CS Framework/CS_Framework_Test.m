@@ -14,11 +14,13 @@ delta_phi = 1;
 angle_spec = phi_min:delta_phi:phi_max;
 
 doa = DOA.DOA_Generate(K, phi_min, phi_max, delta_phi);
+% doa = dataset_doa(:, 2).';
 s = DOA.Source_Generate(K, L);
 A = DOA.Array_Manifold(0.5, sensor_locations, doa);
 C = DOA.Mutual_Coupling(0, 0.1, M, sensor_locations);
 n = DOA.Noise_Generate(SNR_dB, M, L);
 y = C * A * s + n;
+% y = dataset_y(:, :, 8, 2);
 
 Ry = (1 / L) * (y * y');
 z = Ry(:);

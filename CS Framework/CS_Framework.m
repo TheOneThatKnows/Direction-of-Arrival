@@ -65,6 +65,7 @@ classdef CS_Framework
                 obj.mu = mu;
             end
 
+            cost_idx = 1;
             old_cost = inf;
 
             while true
@@ -73,11 +74,13 @@ classdef CS_Framework
                 alpha = obj.Dichotomous_Search(d, 0, 1);
                 obj.Sg = obj.Sg + alpha * d;
                 
-                if abs(cost - old_cost) < 0.005
+                if abs(cost - old_cost) < 0.005 || cost_idx == 500
+                    % cost_idx
                     break
                 end
 
                 old_cost = cost;
+                cost_idx = cost_idx + 1;
             end
         end
 
