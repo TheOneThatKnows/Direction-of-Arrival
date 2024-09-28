@@ -325,7 +325,8 @@ classdef FunctionsOfDOA
         end
         
         % Difference Coarray
-        function diff_coarray = Diff_Coarray(~, sensor_placement)
+        function diff_coarray = Diff_Coarray(obj, sensor_locations)
+            sensor_placement = obj.Sensor_Placement(sensor_locations);
             N = length(sensor_placement);
             diff_coarray = zeros(1, 2 * N - 1);
             for i = 1:N
@@ -341,7 +342,8 @@ classdef FunctionsOfDOA
         end
         
         % Uniform Degrees of Freedom
-        function uniform_degrees_of_freedom = Uniform_Degrees_Of_Freedom(~, diff_coarray)
+        function uniform_degrees_of_freedom = Uniform_Degrees_Of_Freedom(obj, sensor_locations)
+            diff_coarray = obj.Diff_Coarray(sensor_locations);
             uniform_degrees_of_freedom = 0;
             length_diff_coarray = length(diff_coarray);
             for i = (length_diff_coarray + 1)/2:length_diff_coarray
@@ -354,8 +356,8 @@ classdef FunctionsOfDOA
         end
         
         % One-Side Uniform Degrees of Freedom
-        function one_side_uniform_degrees_of_freedom = One_Side_Uniform_Degrees_Of_Freedom(obj, diff_coarray)
-            uniform_degrees_of_freedom = obj.Uniform_Degrees_Of_Freedom(diff_coarray);
+        function one_side_uniform_degrees_of_freedom = One_Side_Uniform_Degrees_Of_Freedom(obj, sensor_locations)
+            uniform_degrees_of_freedom = obj.Uniform_Degrees_Of_Freedom(sensor_locations);
             one_side_uniform_degrees_of_freedom = 0.5 * (uniform_degrees_of_freedom - 1);
         end
 
@@ -398,10 +400,9 @@ classdef FunctionsOfDOA
 
         % Sort and Discard Repeating Rows According to Sensor Locations In The Difference Coarray
         function [X2, M_v] = Rearrange_According_to_Sensor_Locations(obj, X1, sensor_locations)
-            sensor_placement = obj.Sensor_Placement(sensor_locations);
-            diff_coarray = obj.Diff_Coarray(sensor_placement);
-            uDOF = obj.Uniform_Degrees_Of_Freedom(diff_coarray);
-            M_v = obj.One_Side_Uniform_Degrees_Of_Freedom(diff_coarray) + 1;
+            diff_coarray = obj.Diff_Coarray(sensor_locations);
+            uDOF = obj.Uniform_Degrees_Of_Freedom(sensor_locations);
+            M_v = obj.One_Side_Uniform_Degrees_Of_Freedom(sensor_locations) + 1;
             M = length(sensor_locations);
 
             [~, c] = size(X1);
