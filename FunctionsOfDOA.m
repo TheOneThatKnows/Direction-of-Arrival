@@ -1,10 +1,10 @@
 classdef FunctionsOfDOA
     methods
-        function Array_Pattern(~, sensor_locations, coef)
+        function Array_Pattern(~, sensor_locations)
             angles = 0:0.5:180;
             pattern = zeros(1, length(angles));
             for i = 1:length(angles)
-                h = exp(1i * 2 * pi * coef * sensor_locations.' * cosd(angles(i)));
+                h = exp(1i * pi * sensor_locations.' * cosd(angles(i)));
                 pattern(i) = abs(sum(h));
             end
             pattern = pattern / max(pattern);
@@ -56,115 +56,81 @@ classdef FunctionsOfDOA
         end
 
         % Array Manifold
-        function A = Array_Manifold(~, coef, sensor_locations, doa)
+        function A = Array_Manifold(~, sensor_locations, doa)
             number_of_sensors = length(sensor_locations);
             number_of_sources = length(doa);
             A = zeros(number_of_sensors, number_of_sources);
             for i = 1:number_of_sources
-                A(:, i) = exp(1i * 2 * pi * coef * sensor_locations.' * cosd(doa(i)));
+                A(:, i) = exp(1i * 2 * pi * sensor_locations.' * cosd(doa(i)));
             end
         end
 
-        % Spatial Spectrum Computation
-        function spatial_spectrum = Spatial_Spectrum(obj, M, sensor_locations, doa, N, SNR, coef, method, C)
-            n = length(doa);
-
-            s = obj.Source_Generate(n, N);
-            v = obj.Noise_Generate(SNR, M, N);
-            A = obj.Array_Manifold(coef, sensor_locations, doa);
-
-            y = C * A * s + v;
-
-            angles = 0:0.5:180;
-            spatial_spectrum = zeros(1, length(angles));
-
-            if method == "cbf"
-                for i = 1:length(angles)
-                    h = exp(1i * 2 * pi * coef * sensor_locations.' * cosd(angles(i)));
-                    spatial_spectrum(i) = abs(h' * (y * y') * h);
-                end
-            else
-                Ry = (1 / N) * (y * y');
-
-                if method == "capon"
-                    spatial_spectrum = obj.Capon(coef, Ry, sensor_locations);
-
-                elseif method == "music"
-                    spatial_spectrum = obj.MUSIC(n, coef, Ry, sensor_locations);
-
-                elseif method == "kr-music"
-                    spatial_spectrum = obj.KR_MUSIC(Ry, n, sensor_locations, coef);
-
-                else % spatial smoothing methods
-                    z = Ry(:);
-                    [z1, M_v] = obj.Rearrange_According_to_Sensor_Locations(z, sensor_locations);
-                    R_z1 = zeros(M_v);
-                    for i = 1:M_v
-                        z1_i = z1(i:i + M_v - 1);
-                        R_z1 = R_z1 + (1 / M_v) * (z1_i * z1_i');
-                    end
-
-                    if method == "ss-music"
-                        spatial_spectrum = obj.MUSIC(n, coef, R_z1);
-                    else % if method == "ss-capon"
-                        spatial_spectrum = obj.Capon(coef, R_z1);
-                    end
-                end
+        % CBF (Delay-and-Sum)
+        function spec = CBF(~, y, sensor_locations, angles)
+            spec = zeros(1, length(angles));
+            for i = 1:length(angles)
+                h = exp(1i * pi * sensor_locations.' * cosd(angles(i)));
+                spec(i) = abs(h' * (y * y') * h);
             end
-
-            spatial_spectrum = spatial_spectrum / max(spatial_spectrum);
-
-            figure;
-            plot(angles, 10 * log10(spatial_spectrum));
-            xlabel('phi'); xlim([0 180]);
-            title_str = 'Spatial Spectrum - ' + method;
-            title(title_str);
-            grid on;
+            spec = spec / max(spec);
         end
 
         % Capon
-        function spatial_spectrum = Capon(~, coef, Ry, sensor_locations, angles)
-            spatial_spectrum = zeros(1, length(angles));
+        function spec = Capon(~, Ry, sensor_locations, angles)
+            spec = zeros(1, length(angles));
 
-            M = length(Ry(:, 1));
-
-            if nargin == 3
-                sensor_locations = 0:M-1;
-            end
+            M = size(Ry, 1);
 
             for i = 1:length(angles)
-                a_ = exp(1i * 2 * pi * coef * sensor_locations.' * cosd(angles(i)));
+                a_ = exp(1i * pi * sensor_locations.' * cosd(angles(i)));
                 h = ((eye(M)/(Ry)) * a_) / (a_' * (eye(M)/(Ry)) * a_);
-                spatial_spectrum(i) = abs(h' * Ry * h);
+                spec(i) = abs(h' * Ry * h);
             end
+            spec = spec / max(spec);
         end
 
         % MUSIC
-        % This function works for a given covariance matrix. I try to use it when I calculate a covariance matrix using spatial smoothing.
-        function [spatial_spectrum, angles] = MUSIC(~, n, coef, Rz1, sensor_locations, angles)
-            if nargin == 5
-                angles = 0:0.5:180;
-            end
-            spatial_spectrum = zeros(1, length(angles));
+        function spec = MUSIC(~, K, R, sensor_locations, angles)
+            spec = zeros(1, length(angles));
 
-            M_v = length(Rz1(:, 1));
+            M_v = size(R, 1);
 
-            [eig_vecs, ~] = eig(Rz1);   % eigen decomposition of the covariance matrix
-            G = eig_vecs(:, 1:M_v-n);   % noise space
-
-            if nargin == 4
-                sensor_locations = 0:M_v-1; % uniform linear array
-            end
+            [eig_vecs, ~] = eig(R);   % eigen decomposition of the covariance matrix
+            G = eig_vecs(:, 1:M_v-K);   % noise space
 
             for i = 1:length(angles)
-                a_ = exp(1i * 2 * pi * coef * sensor_locations.' * cosd(angles(i)));
-                spatial_spectrum(i) = 1/abs(a_' * (G * G') * a_);
+                a_ = exp(1i * pi * sensor_locations.' * cosd(angles(i)));
+                spec(i) = 1/abs(a_' * (G * G') * a_);
             end
-            spatial_spectrum = spatial_spectrum / max(spatial_spectrum);
+            spec = spec / max(spec);
+        end
+
+        % SS-MUSIC
+        function spec = SS_MUSIC(~, K, R, sensor_locations, angles)
+            z = R(:);
+            [z1, M_v] = obj.Rearrange_According_to_Sensor_Locations(z, sensor_locations);
+            R_z1 = zeros(M_v);
+            for i = 1:M_v
+                z1_i = z1(i:i + M_v - 1);
+                R_z1 = R_z1 + (1 / M_v) * (z1_i * z1_i');
+            end
+            spec = obj.MUSIC(K, R_z1, 0:M_v-1, angles);
+        end
+
+        % DA-MUSIC
+        function spec = DA_MUSIC(~, K, R, sensor_locations, angles)
+            z = R(:);
+            [z1, M_v] = obj.Rearrange_According_to_Sensor_Locations(z, sensor_locations);
+            R_z2 = zeros(M_v);
+            for i = 1:M_v
+                z1_i = z1(i:i + M_v - 1);
+                R_z2(:, M_v-i+1) = z1_i;
+            end
+            spec = obj.MUSIC(K, R_z2, 0:M_v-1, angles);
         end
 
         % KR-MUSIC
-        function spatial_spectrum = KR_MUSIC(obj, Ry, n, sensor_locations, coef)
+        function spatial_spectrum = KR_MUSIC(obj, Ry, n, sensor_locations)
             r = Ry(:); % coarray vector
             [S, ~, ~] = svd(r);
             G = S(:, n+1:end); % noise space
@@ -173,7 +139,7 @@ classdef FunctionsOfDOA
             spatial_spectrum = zeros(1, length(angles));
 
             for i = 1:length(angles)
-                a = exp(1i * 2 * pi * coef * sensor_locations.' * cosd(angles(i)));
+                a = exp(1i * pi * sensor_locations.' * cosd(angles(i)));
                 kr_product = obj.khatri_rao(conj(a), a);
                 spatial_spectrum(i) = 1/abs(kr_product' * (G * G') * kr_product);
             end
@@ -181,7 +147,7 @@ classdef FunctionsOfDOA
         end
         
         % KR-MUSIC for Sparse Nested Arrays with Coprime Displacement
-        function spatial_spectrum = KR_MUSIC_SNACD(obj, Ry, n, subarray1_locations, subarray2_locations, coef)
+        function spatial_spectrum = KR_MUSIC_SNACD(obj, Ry, n, subarray1_locations, subarray2_locations)
             r = Ry(:); % coarray vector
             [S, ~, ~] = svd(r);
             G = S(:, n+1:end); % noise space
@@ -190,8 +156,8 @@ classdef FunctionsOfDOA
             spatial_spectrum = zeros(1, length(angles));
 
             for i = 1:length(angles)
-                a1 = exp(1i * 2 * pi * coef * subarray1_locations.' * cosd(angles(i)));
-                a2 = exp(1i * 2 * pi * coef * subarray2_locations.' * cosd(angles(i)));
+                a1 = exp(1i * pi * subarray1_locations.' * cosd(angles(i)));
+                a2 = exp(1i * pi * subarray2_locations.' * cosd(angles(i)));
                 kr_product = obj.khatri_rao(conj(a2), a1);
                 spatial_spectrum(i) = 1/abs(kr_product' * (G * G') * kr_product);
             end
