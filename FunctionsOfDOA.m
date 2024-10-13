@@ -61,7 +61,7 @@ classdef FunctionsOfDOA
             number_of_sources = length(doa);
             A = zeros(number_of_sensors, number_of_sources);
             for i = 1:number_of_sources
-                A(:, i) = exp(1i * 2 * pi * sensor_locations.' * cosd(doa(i)));
+                A(:, i) = exp(1i * pi * sensor_locations.' * cosd(doa(i)));
             end
         end
 

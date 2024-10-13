@@ -44,3 +44,8 @@ There is 1 input which has three dimensions:
 Version 2.7 
 Similar to Version 2.2
 - Instead of 1D convolution layers, MLP is used
+
+--------
+
+Version 3.0 - 3
+İlk modelden çıkan output u covariance matrise dönüştürüp tekrar phase ekleyerek 3 boyutlu bir input oluşturup bunu yeni modele yedirmek

@@ -1,5 +1,116 @@
 %%
 
+spec = [-inf spec -inf];
+[mags, inds] = findpeaks(spec)
+spec = spec(2:end-1);
+
+%%
+clear; clc; close all;
+
+DOA = FunctionsOfDOA();
+
+sensor_locations = [0 1 4 7 9]; % MRA with 5 sensors
+M = length(sensor_locations);
+N = sensor_locations(M) + 1;
+K = 2;          % # of sources
+L = 70;        % # of snapshots
+
+phi_min = 30;
+phi_max = 150;
+delta_phi = 1;
+
+angles = phi_min:delta_phi:phi_max;
+
+doa = DOA.DOA_Generate(K, phi_min, phi_max, delta_phi);
+
+s = DOA.Source_Generate(K, L);
+A = DOA.Array_Manifold(0.5, sensor_locations, doa);
+SNR_dB = -10;
+n = DOA.Noise_Generate(SNR_dB, M, L);
+y = A * s + n;
+
+spec = zeros(1, length(angles));
+for i = 1:length(angles)
+    h = exp(1i * pi * sensor_locations.' * cosd(angles(i)));
+    spec(i) = abs(h' * (y * y') * h);
+end
+spec = 10 * log10(spec);
+
+plot(angles, spec)
+title("CBF")
+
+%%
+clear; clc; close all;
+
+DOA = FunctionsOfDOA();
+
+sensor_locations = [0 1 4 7 9]; % MRA with 5 sensors
+M = length(sensor_locations);
+N = sensor_locations(M) + 1;
+K = 2;          % # of sources
+L = 70;        % # of snapshots
+
+phi_min = 30;
+phi_max = 150;
+delta_phi = 1;
+
+angles = phi_min:delta_phi:phi_max;
+
+doa = DOA.DOA_Generate(K, phi_min, phi_max, delta_phi);
+
+s = DOA.Source_Generate(K, L);
+A = DOA.Array_Manifold(0.5, sensor_locations, doa);
+SNR_dB = -10;
+n = DOA.Noise_Generate(SNR_dB, M, L);
+y = A * s + n;
+
+Ry = (1 / L) * (y * y');
+
+spec = DOA.MUSIC(K, 0.5, Ry, sensor_locations, angles);
+plot(angles, 10*log10(spec))
+title("MUSIC")
+
+%%
+clear; clc; close all;
+
+DOA = FunctionsOfDOA();
+
+sensor_locations = [0 1 4 7 9]; % MRA with 5 sensors
+M = length(sensor_locations);
+N = sensor_locations(M) + 1;
+K = 2;          % # of sources
+L = 70;        % # of snapshots
+
+phi_min = 30;
+phi_max = 150;
+delta_phi = 1;
+
+angles = phi_min:delta_phi:phi_max;
+
+doa = DOA.DOA_Generate(K, phi_min, phi_max, delta_phi);
+
+s = DOA.Source_Generate(K, L);
+A = DOA.Array_Manifold(0.5, sensor_locations, doa);
+SNR_dB = 10;
+n = DOA.Noise_Generate(SNR_dB, M, L);
+y = A * s + n;
+
+Ry = (1 / L) * (y * y');
+
+z = Ry(:);
+z1 = DOA.Rearrange_According_to_Sensor_Locations(z, sensor_locations);
+R_z2 = zeros(N);
+for i = 1:N
+    z1_i = z1(i:i + N - 1);
+    R_z2(:, N-i+1) = z1_i;
+end
+
+spec = DOA.MUSIC(K, 0.5, R_z2, 0:N-1, angles);
+plot(angles, spec)
+title("DA-MUSIC")
+
+%%
+
 t = 30:3:150;
 x = sind(t);
 
