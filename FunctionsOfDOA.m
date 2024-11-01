@@ -36,8 +36,8 @@ classdef FunctionsOfDOA
             doa = sort(doa);
         end
 
-        % Source Generate
-        function s = Source_Generate(~, number_of_sources, number_of_snapshots, vars)
+        % Source Generate Old
+        function s = Source_Generate_old(~, number_of_sources, number_of_snapshots, vars)
             if nargin == 3
                 vars = ones(number_of_sources, 1);
             end
@@ -47,6 +47,44 @@ classdef FunctionsOfDOA
                 t_initial = randi(number_of_snapshots);
                 t_final = t_initial + number_of_snapshots - 1;
                 s(i, :) = sqrt(vars(i)) * exp(1i * pi * (t_initial:t_final) * cosd(theta(i)));
+            end
+        end
+
+        % Source Generate
+        function s = Source_Generate(~, number_of_sources, number_of_snapshots, vars)
+            if nargin == 3
+                vars = ones(number_of_sources, 1);
+            end
+            f_max = 9e9;        % 9 GHz
+            f_min = 10e3;       % 10 kHz
+            fs = 2 * f_max;     % 18 GHz (sampling frequency)
+            
+            s = zeros(number_of_sources, number_of_snapshots);
+            for i = 1:number_of_sources
+                f = rand * (f_max - f_min) + f_min;
+                t_initial = rand * (fs / f);
+                t_final = t_initial + (number_of_snapshots - 1);
+                t_range = linspace(t_initial, t_final, number_of_snapshots);
+                s(i, :) = sqrt(vars(i)) * exp(1i * 2 * pi * (f / fs) * t_range);
+            end
+        end
+
+        % Coherent Source Generate
+        function s = Coherent_Source_Generate(~, number_of_sources, number_of_snapshots, vars)
+            if nargin == 3
+                vars = ones(number_of_sources, 1);
+            end
+            f_max = 9e9;        % 9 GHz
+            f_min = 10e3;       % 10 kHz
+            fs = 2 * f_max;     % 18 GHz (sampling frequency)
+            
+            s = zeros(number_of_sources, number_of_snapshots);
+            f = rand * (f_max - f_min) + f_min;
+            for i = 1:number_of_sources
+                t_initial = rand * (fs / f);
+                t_final = t_initial + (number_of_snapshots - 1);
+                t_range = linspace(t_initial, t_final, number_of_snapshots);
+                s(i, :) = sqrt(vars(i)) * exp(1i * 2 * pi * (f / fs) * t_range);
             end
         end
 
