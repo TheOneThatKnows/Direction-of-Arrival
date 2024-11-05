@@ -1,47 +1,47 @@
 %%
 
-numObservations = size(labels, 2);
+numObservations = size(labels, 1);
 
 [idxTrain,idxTest] = trainingPartitions(numObservations,[0.7 0.3]);
 
 XTrain = features(:, :, :, idxTrain);
-YTrain = labels(idxTrain);
+YTrain = labels(idxTrain, :);
 XTest = features(:, :, :, idxTest);
-YTest = labels(idxTest);
+YTest = labels(idxTest, :);
 
 %%
 
-numObservations = size(YTrain, 2);
+numObservations = size(YTrain, 1);
 
 [idxTrain,idxValidation] = trainingPartitions(numObservations,[0.85 0.15]);
 
 XValidation = XTrain(:, :, :, idxValidation);
-YValidation = YTrain(idxValidation);
+YValidation = YTrain(idxValidation, :);
 
 XTrain = XTrain(:, :, :, idxTrain);
-YTrain = YTrain(idxTrain);
+YTrain = YTrain(idxTrain, :);
 
 %%
 
-dsTrain = MyDataStore(XTrain, YTrain);
-dsValid = MyDataStore(XValidation, YValidation);
-dsTest = MyDataStore(XTest, YTest);
-
-%%
+miniBatchSize  = 128;
+validationFrequency = floor(size(YTrain, 1)/miniBatchSize);
 
 options = trainingOptions("sgdm", ...
-    InitialLearnRate=0.001, ...
-    MaxEpochs=200, ...
+    MiniBatchSize=miniBatchSize, ...
+    InitialLearnRate=1e-3, ...
+    LearnRateSchedule="piecewise", ...
+    LearnRateDropFactor=0.1, ...
+    LearnRateDropPeriod=20, ...
     Shuffle="every-epoch", ...
-    ValidationData=dsValid, ...
-    ValidationFrequency=30, ...
+    ValidationData={XValidation, YValidation2}, ...
+    ValidationFrequency=validationFrequency, ...
     Plots="training-progress", ...
-    Metrics="accuracy", ...
+    Metrics="rmse", ...
     Verbose=false);
 
 %%
 
-net = trainnet(dsTrain,lgraph,"crossentropy",options);
+net = trainnet(XTrain,YTrain,lgraph,"mse",options);
 
 %% Test Network
 
