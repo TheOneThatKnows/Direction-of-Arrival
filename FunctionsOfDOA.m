@@ -69,6 +69,27 @@ classdef FunctionsOfDOA
             end
         end
 
+        % Source Generate
+        function [s, lambda] = Source_Generate_2(~, number_of_sources, number_of_snapshots, vars)
+            if nargin == 3
+                vars = ones(number_of_sources, 1);
+            end
+            f_max = 9e9;        % 9 GHz
+            f_min = 10e3;       % 10 kHz
+            fs = 2 * f_max;     % 18 GHz (sampling frequency)
+            
+            s = zeros(number_of_sources, number_of_snapshots);
+            lambda = zeros(number_of_sources, 1);
+            for i = 1:number_of_sources
+                f = rand * (f_max - f_min) + f_min;
+                t_initial = rand * (fs / f);
+                t_final = t_initial + (number_of_snapshots - 1);
+                t_range = linspace(t_initial, t_final, number_of_snapshots);
+                s(i, :) = sqrt(vars(i)) * exp(1i * 2 * pi * (f / fs) * t_range);
+                lambda(i) = 3e8 / f;
+            end
+        end
+
         % Coherent Source Generate
         function s = Coherent_Source_Generate(~, number_of_sources, number_of_snapshots, vars)
             if nargin == 3
@@ -103,6 +124,16 @@ classdef FunctionsOfDOA
             end
         end
 
+        % Array Manifold
+        function A = Array_Manifold_2(~, lambda, d, sensor_locations, doa)
+            number_of_sensors = length(sensor_locations);
+            number_of_sources = length(doa);
+            A = zeros(number_of_sensors, number_of_sources);
+            for i = 1:number_of_sources
+                A(:, i) = exp(1i * 2 * pi * (d / lambda(i)) * sensor_locations.' * cosd(doa(i)));
+            end
+        end
+
         % CBF (Delay-and-Sum)
         function spec = CBF(~, y, sensor_locations, angles)
             spec = zeros(1, length(angles));
@@ -133,7 +164,9 @@ classdef FunctionsOfDOA
 
             M_v = size(R, 1);
 
-            [eig_vecs, ~] = eig(R);   % eigen decomposition of the covariance matrix
+            [eig_vecs, eig_vals] = eig(R, "vector");   % eigen decomposition of the covariance matrix
+            [~, sorted_inds] = sort(eig_vals, "ascend");
+            eig_vecs = eig_vecs(:, sorted_inds);
             G = eig_vecs(:, 1:M_v-K);   % noise space
 
             for i = 1:length(angles)
@@ -144,7 +177,7 @@ classdef FunctionsOfDOA
         end
 
         % SS-MUSIC
-        function spec = SS_MUSIC(~, K, R, sensor_locations, angles)
+        function [spec, R_z1] = SS_MUSIC(obj, K, R, sensor_locations, angles)
             z = R(:);
             [z1, M_v] = obj.Rearrange_According_to_Sensor_Locations(z, sensor_locations);
             R_z1 = zeros(M_v);
@@ -156,7 +189,7 @@ classdef FunctionsOfDOA
         end
 
         % DA-MUSIC
-        function spec = DA_MUSIC(~, K, R, sensor_locations, angles)
+        function [spec, R_z2] = DA_MUSIC(obj, K, R, sensor_locations, angles)
             z = R(:);
             [z1, M_v] = obj.Rearrange_According_to_Sensor_Locations(z, sensor_locations);
             R_z2 = zeros(M_v);
@@ -165,6 +198,20 @@ classdef FunctionsOfDOA
                 R_z2(:, M_v-i+1) = z1_i;
             end
             spec = obj.MUSIC(K, R_z2, 0:M_v-1, angles);
+        end
+
+        % DML
+        function spec = DML(~, Ry, sensor_locations, angles)
+            M = size(Ry, 1);
+            spec = zeros(1, length(angles));
+            for i = 1:length(angles)
+                a = exp(1i * pi * sensor_locations.' * cosd(angles(i)));
+                PI_A_ort = eye(M) - a * (1 / (a' * a)) * a';
+                
+                spec(i) = trace(PI_A_ort * Ry);
+            end
+            spec = 1 ./ spec;
+            spec = spec / max(spec);
         end
 
         % KR-MUSIC

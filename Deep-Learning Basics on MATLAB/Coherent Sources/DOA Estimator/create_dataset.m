@@ -15,7 +15,8 @@ addpath(['D:\D\Alp\Master ODTÜ\Thesis\DOA\Codes\Direction-of-Arrival\' ...
 
 %% Sensor Properties
 
-sensor_locations = [1 2 3 4 9 13] - 1; % NA v2 with 6 sensors
+% sensor_locations = [1 2 3 4 9 13] - 1; % NA v2 with 6 sensors
+sensor_locations = [0 1 4 7 9]; % MRA with 5 sensors
 
 M = length(sensor_locations);
 N = sensor_locations(M) + 1;
@@ -33,10 +34,12 @@ delta_phi = 1;  % angle resolution
 Q = (phi_max - phi_min) / delta_phi + 1;
 labels = zeros(numOfData, Q);
 
+K = 5;
+K_coherent = 2;
 for idx = 1:numOfData
-    K = randi(N-1);     % # of sources
-    K_coherent = randi(K);
-    K_coherent = K_coherent * sign(K_coherent - 1);
+    % K = randi(N-1);     % # of sources
+    % K_coherent = randi(K);
+    % K_coherent = K_coherent * sign(K_coherent - 1);
 
     doa = DOA.DOA_Generate(K, phi_min, phi_max, delta_phi);
     doa_inds = (round(doa) - phi_min) / delta_phi + 1;
@@ -52,7 +55,15 @@ for idx = 1:numOfData
     y = A * s + n;
     R = (1 / L) * (y * y');
 
-    R_out = Spatial_Smoothing(DOA, sensor_locations, R);
+    % R_out = Spatial_Smoothing(DOA, sensor_locations, R);
+
+    z = R(:);
+    z1 = DOA.Rearrange_According_to_Sensor_Locations(z, sensor_locations);
+    R_out = zeros(N);
+    for i = 1:N
+        z1_i = z1(i:i + N - 1);
+        R_out = R_out + (1 / N) * (z1_i * z1_i');
+    end
 
     R_norm = (R_out - mean(R_out(:))) / std(R_out(:));
 

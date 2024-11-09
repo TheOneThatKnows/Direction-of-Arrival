@@ -1,0 +1,4 @@
+Açılar aralıklı olacak şekilde
+
+Future Work
+Sadece belirli bir case için train edildi. Bu sebeple farklı case'lerin detect edilmesi ve bu case'lere özel dataset oluşturulup modelin train edilmesi gerekmekte.
