@@ -200,7 +200,70 @@ disp("Rank(R): " + rank(R))
 [~, eig_vals] =  eig(R, "vector");
 eig_vals_R = sort(eig_vals, "descend");
 
-disp([[eig_vals_ohm2; zeros(N-M, 1)] [eig_vals_ohm2_noiseless; zeros(N-M, 1)] eig_vals_R])
+R_sparse_toeplitz = Sparse_Toeplitz(DOA, R_ohm2_noiseless, sensor_locations);
+disp("Rank(R_sparse_toeplitz): " + rank(R_sparse_toeplitz))
+[~, eig_vals] =  eig(R_sparse_toeplitz, "vector");
+eig_vals_R_sparse_toeplitz = sort(eig_vals, "descend");
+
+R_ss2 = Spatial_Smoothing(DOA, sensor_locations, R_ohm2_noiseless);
+disp("Rank(R_ss2): " + rank(R_ss2))
+[~, eig_vals] =  eig(R_ss2, "vector");
+eig_vals_R_ss2 = sort(eig_vals, "descend");
+
+% disp([[eig_vals_ohm2; zeros(N-M, 1)] [eig_vals_ohm2_noiseless; zeros(N-M, 1)] eig_vals_R])
+disp([[eig_vals_ohm2; zeros(N-M, 1)] eig_vals_R eig_vals_R_ss2])
+
+%%
+
+%% Initialization
+
+clear; clc; close all;
+addpath('D:\D\Alp\Master ODTÜ\Thesis\DOA\Codes\Direction-of-Arrival');
+DOA = FunctionsOfDOA();
+
+% sensor_locations = [1 2 3 4 9 13] - 1; % NA_v2 with 6 sensors
+sensor_locations = [0 1 4 7 9]; % NA_v2 with 6 sensors
+
+M = length(sensor_locations);
+N = sensor_locations(M) + 1;
+
+K = 3;          % # of sources
+K_coherent = 2;
+L = 70;        % # of snapshots
+
+phi_min = 30;
+phi_max = 150;
+delta_phi = 1;
+
+angle_spec = phi_min:delta_phi:phi_max;
+
+doa = DOA.DOA_Generate(K, phi_min, phi_max, 1)
+
+s = [DOA.Source_Generate(K-K_coherent, L); 
+    DOA.Coherent_Source_Generate(K_coherent, L)];
+s_old = s;
+shuffledIndices = randperm(K);
+s = s(shuffledIndices, :);
+A_ohm = DOA.Array_Manifold(sensor_locations, doa);
+SNR_dB = 10;
+n = DOA.Noise_Generate(SNR_dB, M, L);
+y = A_ohm * s + n;
+
+R_ohm = (1 / L) * (y * y');
+% R_ss = Spatial_Smoothing(DOA, sensor_locations, R_ohm);
+R_sparse_toeplitz = Sparse_Toeplitz(DOA, R_ohm, sensor_locations);
+
+spatial_spectrum_1 = DOA.MUSIC(K, R_ohm, sensor_locations, angle_spec);
+spatial_spectrum_2 = DOA.SS_MUSIC(K, R_ohm, sensor_locations, angle_spec);
+spatial_spectrum_3 = DOA.MUSIC(K, R_sparse_toeplitz, sensor_locations, angle_spec);
+spatial_spectrum_4 = DOA.SS_MUSIC(K, R_sparse_toeplitz, sensor_locations, angle_spec);
+
+figure; hold on
+plot(angle_spec, 10*log10(spatial_spectrum_1))
+plot(angle_spec, 10*log10(spatial_spectrum_2))
+plot(angle_spec, 10*log10(spatial_spectrum_3))
+plot(angle_spec, 10*log10(spatial_spectrum_4))
+legend('MUSIC', 'SS-MUSIC', 'Sparse-Toeplitz', 'SS-MUSIC-2')
 
 %%
 
@@ -208,3 +271,4 @@ spatial_spectrum_4 = DOA.DML(R_ohm, sensor_locations, angle_spec);
 
 figure; hold on
 plot(angle_spec, 10*log10(spatial_spectrum_4))
+
