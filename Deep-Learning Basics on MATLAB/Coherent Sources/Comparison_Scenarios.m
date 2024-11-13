@@ -11,8 +11,8 @@ addpath(['D:\D\Alp\Master ODTÜ\Thesis\DOA\Codes\Direction-of-Arrival\' ...
 rng('shuffle')
 
 %% 
-sensor_locations_ula = 0:4; % ULA with 5 sensors
-sensor_locations_mra = [0 1 4 7 9]; % MRA with 5 sensors
+sensor_locations_ula = 0:6; % ULA with 7 sensors
+sensor_locations_mra = [1 2 3 4 9 13 17] - 1; % NA_v2 with 6 sensors
 M = length(sensor_locations_mra);
 N = sensor_locations_mra(M) + 1;
 K = 3;          % # of sources
@@ -50,7 +50,7 @@ for epoch = 1:EPOCHS
 
         % R_Toeplitz + MUSIC
         Ry_ula = (1 / L) * (y_ula * y_ula');
-        R_toeplitz = R_Toeplitz(Ry_ula, "half");
+        R_toeplitz = R_Toeplitz(Ry_ula, "full");
         spec = DOA.MUSIC(K, R_toeplitz, sensor_locations_ula, angle_spec);
         doa_est = DOA_Estimator(spec, angle_spec, K);
         doa_est = sort(doa_est);
