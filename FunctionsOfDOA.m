@@ -210,6 +210,7 @@ classdef FunctionsOfDOA
                 
                 spec(i) = trace(PI_A_ort * Ry);
             end
+            spec = abs(spec);
             spec = 1 ./ spec;
             spec = spec / max(spec);
         end

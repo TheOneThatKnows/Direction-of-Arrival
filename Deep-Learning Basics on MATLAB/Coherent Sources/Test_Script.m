@@ -20,13 +20,19 @@ angle_spec = phi_min:delta_phi:phi_max;
 
 doa = DOA.DOA_Generate(K, phi_min, phi_max, 1)
 
-s = DOA.Source_Generate_old(K, L);
+% s = DOA.Source_Generate_old(K, L);
 A = DOA.Array_Manifold(sensor_locations, doa);
 SNR_dB = 20;
-n = DOA.Noise_Generate(SNR_dB, M, L);
-y = A * s + n;
+% n = DOA.Noise_Generate(SNR_dB, M, L);
+% y = A * s + n;
 
-Ry = (1 / L) * (y * y');
+Rs = [1 0 0; 0 1 1; 0 1 1];
+SNR = 10^(SNR_dB / 10);
+Ry = A * Rs * A' + (1 / SNR) * eye(M);
+
+Rs_out = R_Toeplitz(Rs, "full");
+Ry_out = R_Toeplitz(Ry, "full");
+Ry_out_2 = A * Rs_out * A' + (1 / SNR) * eye(M);
 
 spatial_spectrum_1 = DOA.MUSIC(K, Ry, sensor_locations, angle_spec);
 

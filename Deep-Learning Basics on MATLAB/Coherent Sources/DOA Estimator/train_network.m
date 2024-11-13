@@ -41,7 +41,8 @@ options = trainingOptions("sgdm", ...
 
 %%
 
-net = trainnet(XTrain,YTrain,lgraph,"mse",options);
+% net = trainnet(XTrain,YTrain,lgraph,"mse",options);
+net = trainnet(XTrain,YTrain,net,"mse",options);
 
 %% Test Network
 
