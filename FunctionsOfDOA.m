@@ -109,6 +109,18 @@ classdef FunctionsOfDOA
             end
         end
 
+        % Simulate The Environment
+        function y = Simulate_Environment(~, sensor_locations, doa, number_of_snapshots, Rs, SNR_dB)
+            M = length(sensor_locations);
+            L = number_of_snapshots;
+            K = length(doa);
+
+            sensor_positions = [zeros(1, M); sensor_locations; zeros(1, M)] * 0.5;
+            angs = [90-doa; zeros(1, K)];
+
+            y = sensorsig(sensor_positions, L, angs, db2pow(-SNR_dB), Rs).';
+        end
+
         % Noise Generate
         function v = Noise_Generate(~, SNR_dB, number_of_sensors, number_of_snapshots)
             v = sqrt(1 / 10^(SNR_dB/10)) * (1/sqrt(2)) * (randn(number_of_sensors, number_of_snapshots) + 1i * randn(number_of_sensors, number_of_snapshots));
