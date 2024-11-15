@@ -33,18 +33,24 @@ angle_spec = phi_min:delta_phi/10:phi_max;
 
 for epoch = 1:EPOCHS
     doa = DOA.DOA_Generate(K, phi_min, phi_max, 2 * delta_phi);
-
-    s = [DOA.Coherent_Source_Generate(K_coherent, L);
-        DOA.Source_Generate(K - K_coherent, L)];
     shuffledIndices = randperm(K);
-    s = s(shuffledIndices, :);
-    A_ula = DOA.Array_Manifold(sensor_locations_ula, doa);
-    A_mra = DOA.Array_Manifold(sensor_locations_mra, doa);
+    doa = doa(shuffledIndices);
+
+    % s = [DOA.Coherent_Source_Generate(K_coherent, L);
+    %     DOA.Source_Generate(K - K_coherent, L)];
+    % shuffledIndices = randperm(K);
+    % s = s(shuffledIndices, :);
+    % A_ula = DOA.Array_Manifold(sensor_locations_ula, doa);
+    % A_mra = DOA.Array_Manifold(sensor_locations_mra, doa);
     for idx = 1:length(SNR_dB_vals)
         SNR_dB = SNR_dB_vals(idx);
-        n = DOA.Noise_Generate(SNR_dB, M, L);
-        y_ula = A_ula * s + n;
-        y_mra = A_mra * s + n;
+        % n = DOA.Noise_Generate(SNR_dB, M, L);
+        % y_ula = A_ula * s + n;
+        % y_mra = A_mra * s + n;
+
+        Rs = DOA.Signal_Covariance(K, K_coherent);
+        y_ula = DOA.Simulate_Environment(sensor_locations_ula, doa, L, Rs, SNR_dB);
+        y_mra = DOA.Simulate_Environment(sensor_locations_mra, doa, L, Rs, SNR_dB);
 
         method = 1;
 
