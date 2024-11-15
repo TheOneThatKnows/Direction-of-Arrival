@@ -109,6 +109,36 @@ classdef FunctionsOfDOA
             end
         end
 
+        % Source Generation Using White Noise
+        function s = Source_Generate_Ultra(~, number_of_sources, number_of_snapshots, amplitude)
+            if nargin == 3
+                amplitude = ones(number_of_sources(1), 1);
+            end
+
+            f0 = 9e9;        % 9 GHz
+            fs = 8 * f0;     % 18 GHz (sampling frequency)
+            
+            s = zeros(number_of_sources(1), number_of_snapshots);
+            for i = 1:number_of_sources(1)
+                if i <= number_of_sources(2) && i > 1  % Sources coherent with first source
+                    s(i,:) = amplitude(i) * s(1,:);  % Coherent with source 1
+                else
+                    % Complex Gaussian random process with narrowband filtering
+                    white_noise = (randn(1, number_of_snapshots) + 1j*randn(1, number_of_snapshots))/sqrt(2);
+
+                    % Create narrowband filter
+                    filter_order = 64;
+                    bandwidth = 20; % Hz
+                    h = fir1(filter_order, [f0-bandwidth f0+bandwidth]/(fs/2));
+
+                    % Filter the noise to create narrowband signal
+                    filtered_signal = filter(h, 1, white_noise);
+                    sigma = sqrt(abs(filtered_signal * filtered_signal'));
+                    s(i,:) = amplitude(i) * filtered_signal * sqrt(number_of_snapshots) / sigma;
+                end
+            end
+        end
+
         % Simulate The Environment
         function y = Simulate_Environment(~, sensor_locations, doa, number_of_snapshots, Rs, SNR_dB)
             M = length(sensor_locations);
