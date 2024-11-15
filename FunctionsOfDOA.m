@@ -139,6 +139,13 @@ classdef FunctionsOfDOA
             end
         end
 
+        % Signal Covariance Matrix
+        function Rs = Signal_Covariance(~, K, K_coherent)
+            alpha = [1 (0.75 + 0.25 * rand(1, K_coherent - 1))].';
+            Rs = eye(K);
+            Rs(1:K_coherent, 1:K_coherent) = alpha * alpha';
+        end
+
         % Simulate The Environment
         function y = Simulate_Environment(~, sensor_locations, doa, number_of_snapshots, Rs, SNR_dB)
             M = length(sensor_locations);
