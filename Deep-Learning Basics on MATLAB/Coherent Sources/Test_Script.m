@@ -9,6 +9,44 @@ sensor_locations = 0:10; % ULA with 11 sensors
 M = length(sensor_locations);
 N = sensor_locations(M) + 1;
 
+K = 3;          % # of sources
+K_coherent = 2;
+L = 70;        % # of snapshots
+
+phi_min = 30;
+phi_max = 150;
+delta_phi = 1;
+
+angle_spec = phi_min:delta_phi:phi_max;
+
+doa = DOA.DOA_Generate(K, phi_min, phi_max, 1);
+
+s = [DOA.Source_Generate(K-K_coherent, L);
+    DOA.Coherent_Source_Generate(K_coherent, L)];
+A = DOA.Array_Manifold(sensor_locations, doa);
+SNR_dB = 10;
+n = DOA.Noise_Generate(SNR_dB, M, L);
+y = A * s + n;
+Rs1 = (1 / L) * (s * s');
+Rn1 = (1 / L) * (n * n');
+Ry1 = (1 / L) * (y * y');
+
+Rs2 = [1 0 0; 0 1 1; 0 1 1];
+SNR = 10^(SNR_dB / 10);
+Rn2 = (1 / SNR) * eye(M);
+Ry2 = A * Rs1 * A' + Rn1;
+
+%% Initialization (ULA)
+
+clear; clc; close all;
+addpath('D:\D\Alp\Master ODTÜ\Thesis\DOA\Codes\Direction-of-Arrival');
+DOA = FunctionsOfDOA();
+
+sensor_locations = 0:10; % ULA with 11 sensors
+
+M = length(sensor_locations);
+N = sensor_locations(M) + 1;
+
 K = 2;          % # of sources
 L = 70;        % # of snapshots
 

@@ -36,6 +36,30 @@ classdef FunctionsOfDOA
             doa = sort(doa);
         end
 
+        % DOA Estimate
+        function doa_est = DOA_Estimate(~, spec, angle_spec, K)
+            spec = [-inf spec -inf];
+            [peak_mags, peak_inds] = findpeaks(spec);
+            doa_est = zeros(1, K);
+            [~, sorted_inds] = sort(peak_mags, "descend");
+            peak_inds = peak_inds(sorted_inds);
+            peak_inds = [peak_inds zeros(1, K-1)];
+            idx = peak_inds(1);
+            doa_est(1) = angle_spec(idx - 1);
+
+            for i = 2:K
+                idx = peak_inds(i);
+                if idx == 0
+                    doa_est(i:K) = mean(doa_est(1:i-1));
+                    break
+                else
+                    doa_est(i) = angle_spec(idx - 1);
+                end
+            end
+
+            doa_est = sort(doa_est);
+        end
+
         % Source Generate Old
         function s = Source_Generate_old(~, number_of_sources, number_of_snapshots, vars)
             if nargin == 3
@@ -139,6 +163,12 @@ classdef FunctionsOfDOA
             end
         end
 
+        % Simulate The Environment
+        function y = Simulate_Environment(~, sensor_locations, doa, number_of_snapshots, Rs, SNR_dB)
+
+            y = sensorsig(sensor_locations * 0.5, number_of_snapshots, 90-doa, db2pow(-SNR_dB), Rs).';
+        end
+
         % Signal Covariance Matrix
         function Rs = Signal_Covariance(~, K, K_coherent)
             alpha = [1 (0.75 + 0.25 * rand(1, K_coherent - 1))].';
@@ -146,16 +176,50 @@ classdef FunctionsOfDOA
             Rs(1:K_coherent, 1:K_coherent) = alpha * alpha';
         end
 
-        % Simulate The Environment
-        function y = Simulate_Environment(~, sensor_locations, doa, number_of_snapshots, Rs, SNR_dB)
-            M = length(sensor_locations);
-            L = number_of_snapshots;
-            K = length(doa);
+        % Narrowband Source Generate
+        function s = Narrowband_Source_Generate(~, K, L, vars)
+            if nargin == 3
+                vars = ones(K, 1);
+            end
+            fc = 9e9;       % 9 GHz
+            fs = 2 * fc;    % 18 GHz (sampling frequency)
 
-            sensor_positions = [zeros(1, M); sensor_locations; zeros(1, M)] * 0.5;
-            angs = [90-doa; zeros(1, K)];
+            v = zeros(K, L);
+            for i = 1:K
+                v(i, :) = sqrt(vars(i)) * (randn(1, L) + 1i * randn(1, L));
+            end
+            s = real(v .* exp(1i * (2 * pi * (fc / fs) * (0:L-1))));
+        end
 
-            y = sensorsig(sensor_positions, L, angs, db2pow(-SNR_dB), Rs).';
+        % Narrowband Coherent Source Generate
+        function s = Narrowband_Coherent_Source_Generate(~, K, L, vars)
+            if nargin == 3
+                vars = ones(K, 1);
+            end
+            fc = 9e9;       % 9 GHz
+            fs = 2 * fc;    % 18 GHz (sampling frequency)
+
+            v_og = randn(1, L) + 1i * randn(1, L);
+            v = zeros(K, L);
+            for i = 1:K
+                v(i, :) = sqrt(vars(i)) * v_og;
+            end
+            s = real(v .* exp(1i * (2 * pi * (fc / fs) * (0:L-1))));
+        end
+
+        % Source Generate Final
+        function s = Source_Generate_Final(~, K, K_coherent, L, vars)
+            v = zeros(K, L);
+            v(1:K_coherent, :) = ones(K_coherent, 1) * (randn(1, L) + 1i * randn(1, L));
+            v(K_coherent+1:end, :) = randn(K-K_coherent, L) + 1i * randn(K-K_coherent, L);
+
+            s = real(v .* exp(1i * (2 * pi * 0.5 * (0:L-1))));
+            for i = 1:K
+                s(i, :) = s(i, :) / sqrt(var(s(i, :)));
+            end
+            s = sqrt(vars) .* s;
+            shuffledInds = randperm(K);
+            s = s(shuffledInds, :);
         end
 
         % Noise Generate

@@ -36,16 +36,21 @@ angle_spec2 = phi_min:delta_phi:phi_max;
 
 for epoch = 1:EPOCHS
     doa = DOA.DOA_Generate(K, phi_min, phi_max, 2 * delta_phi);
-
-    s = [DOA.Coherent_Source_Generate(K_coherent, L);
-        DOA.Source_Generate(K - K_coherent, L)];
     shuffledIndices = randperm(K);
-    s = s(shuffledIndices, :);
-    A = DOA.Array_Manifold(sensor_locations, doa);
+    doa = doa(shuffledIndices);
+
+    % s = [DOA.Coherent_Source_Generate(K_coherent, L);
+    %     DOA.Source_Generate(K - K_coherent, L)];
+    % shuffledIndices = randperm(K);
+    % s = s(shuffledIndices, :);
+    % A = DOA.Array_Manifold(sensor_locations, doa);
     for idx = 1:length(SNR_dB_vals)
         SNR_dB = SNR_dB_vals(idx);
-        n = DOA.Noise_Generate(SNR_dB, M, L);
-        y = A * s + n;
+        % n = DOA.Noise_Generate(SNR_dB, M, L);
+        % y = A * s + n;
+
+        Rs = DOA.Signal_Covariance(K, K_coherent);
+        y = DOA.Simulate_Environment(sensor_locations, doa, L, Rs, SNR_dB);
 
         method = 1;
 
@@ -101,6 +106,94 @@ end
 
 RMSE = (1 / EPOCHS) * RMSE;
 % RMSE = (1 / epoch) * RMSE;
+
+%% 
+sensor_locations = 0:10; % ULA with 11 sensors
+M = length(sensor_locations);
+N = sensor_locations(M) + 1;
+K = 3;          % # of sources
+K_coherent = 0;
+L = 70;        % # of snapshots
+
+phi_min = 30;
+phi_max = 150;
+delta_phi = 1;
+
+SNR_dB_vals = -10:1:10;
+EPOCHS = 500;
+
+noOfMethods = 5; % CBF, Capon, DML, MUSIC, R_Toeplitz+MUSIC, DL-Network
+RMSE = zeros(noOfMethods, length(SNR_dB_vals));
+
+angle_spec = phi_min:delta_phi/10:phi_max;
+angle_spec2 = phi_min:delta_phi:phi_max;
+
+for epoch = 1:EPOCHS
+    doa = DOA.DOA_Generate(K, phi_min, phi_max, 2 * delta_phi);
+    shuffledIndices = randperm(K);
+    doa = doa(shuffledIndices);
+
+    % s = [DOA.Coherent_Source_Generate(K_coherent, L);
+    %     DOA.Source_Generate(K - K_coherent, L)];
+    % shuffledIndices = randperm(K);
+    % s = s(shuffledIndices, :);
+    % A = DOA.Array_Manifold(sensor_locations, doa);
+    for idx = 1:length(SNR_dB_vals)
+        SNR_dB = SNR_dB_vals(idx);
+        % n = DOA.Noise_Generate(SNR_dB, M, L);
+        % y = A * s + n;
+
+        % Rs = DOA.Signal_Covariance(K, K_coherent);
+        Rs = eye(K);
+        y = DOA.Simulate_Environment(sensor_locations, doa, L, Rs, SNR_dB);
+
+        method = 1;
+
+        % CBF
+        spec = DOA.CBF(y, sensor_locations, angle_spec);
+        doa_est = DOA_Estimator(spec, angle_spec, K);
+        doa_est = sort(doa_est);
+        RMSE(method, idx) = RMSE(method, idx) + rmse(doa_est, doa);
+        method = method + 1;
+
+        Ry = (1 / L) * (y * y');
+
+        % Capon
+        spec = DOA.Capon(Ry, sensor_locations, angle_spec);
+        doa_est = DOA_Estimator(spec, angle_spec, K);
+        doa_est = sort(doa_est);
+        RMSE(method, idx) = RMSE(method, idx) + rmse(doa_est, doa);
+        method = method + 1;
+
+        % DML
+        spec = DOA.DML(Ry, sensor_locations, angle_spec);
+        doa_est = DOA_Estimator(spec, angle_spec, K);
+        doa_est = sort(doa_est);
+        RMSE(method, idx) = RMSE(method, idx) + rmse(doa_est, doa);
+        method = method + 1;
+
+        % MUSIC
+        spec = DOA.MUSIC(K, Ry, sensor_locations, angle_spec);
+        doa_est = DOA_Estimator(spec, angle_spec, K);
+        doa_est = sort(doa_est);
+        RMSE(method, idx) = RMSE(method, idx) + rmse(doa_est, doa);
+        method = method + 1;
+
+        R_toeplitz = R_Toeplitz(Ry, "full");
+
+        % R_Toeplitz + MUSIC
+        spec = DOA.MUSIC(K, R_toeplitz, sensor_locations, angle_spec);
+        doa_est = DOA_Estimator(spec, angle_spec, K);
+        doa_est = sort(doa_est);
+        RMSE(method, idx) = RMSE(method, idx) + rmse(doa_est, doa);
+        method = method + 1;
+    end
+    if rem(epoch, 10) == 0
+        disp(epoch + " / " + EPOCHS)
+    end
+end
+
+RMSE = (1 / EPOCHS) * RMSE;
 
 %%
 figure; hold on;
