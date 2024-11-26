@@ -6,7 +6,7 @@ addpath(['D:\D\Alp\Master ODTÜ\Thesis\DOA\Codes\Direction-of-Arrival' ...
 %% CNN Structure
 
 lgraph = [
-    imageInputLayer([M M 3],"Normalization","none")
+    imageInputLayer([N N 3],"Normalization","none")
     convolution2dLayer([4 4],128)
     batchNormalizationLayer
     reluLayer
@@ -17,13 +17,13 @@ lgraph = [
     batchNormalizationLayer
     reluLayer
     flattenLayer
-    fullyConnectedLayer(1024)
+    fullyConnectedLayer(656)
     reluLayer
     dropoutLayer(0.2)
-    fullyConnectedLayer(512)
+    fullyConnectedLayer(374)
     reluLayer
     dropoutLayer(0.2)
-    fullyConnectedLayer(256)
+    fullyConnectedLayer(213)
     reluLayer
     dropoutLayer(0.2)
     fullyConnectedLayer(Q)
