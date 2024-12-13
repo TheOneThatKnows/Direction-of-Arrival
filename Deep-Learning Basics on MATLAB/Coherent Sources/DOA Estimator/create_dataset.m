@@ -15,7 +15,8 @@ addpath(['D:\D\Alp\Master ODTÜ\Thesis\DOA\Codes\Direction-of-Arrival\' ...
 
 %% Sensor Properties
 
-sensor_locations = 0:10; % ULA with 11 sensors
+% sensor_locations = 0:10; % ULA with 11 sensors
+sensor_locations = [0 1 4 7 9]; % MRA with 5 sensors
 
 M = length(sensor_locations);
 N = sensor_locations(M) - sensor_locations(1) + 1;
@@ -23,8 +24,8 @@ N = sensor_locations(M) - sensor_locations(1) + 1;
 %% Prepare Dataset
 
 numOfData = 1200000;
-feature = zeros(M, M, 3);
-features = zeros(M, M, 3, numOfData);
+feature = zeros(N, N, 3);
+features = zeros(N, N, 3, numOfData);
 
 L = 70;        % # of snapshots
 phi_min = 30;
@@ -54,17 +55,23 @@ for idx = 1:numOfData
         labels(idx, idx1:idx2) = labels(idx, idx1:idx2) + percentages.';
     end
 
+    % Array Manifold
     A = DOA.Array_Manifold(sensor_locations, doa);
-    s = [DOA.Coherent_Source_Generate(K_coherent, L); 
-        DOA.Source_Generate(K - K_coherent, L)];
-    shuffledIndices = randperm(K);
-    s = s(shuffledIndices, :);
+
+    % signal generate
+    vars = ones(K, 1);
+    vars(1:K_coherent) = [1; 0.75+0.25*rand(K_coherent-1, 1)];
+    s = DOA.Source_Generate_Final(K, K_coherent, L, vars);
+
+    % noise generate
     SNR_dB = -5 + sign(randi(3) - 2.5) * 5 + rand * 10;
     n = DOA.Noise_Generate(SNR_dB, M, L);
+
+    % measurements
     y = A * s + n;
     R = (1 / L) * (y * y');
 
-    R_toeplitz = R_Toeplitz(R, "half");
+    R_toeplitz = toeplitz(Virtual_Covariance_Column(DOA, R, sensor_locations)');
 
     R_norm = (R_toeplitz - mean(R_toeplitz(:))) / std(R_toeplitz(:));
 

@@ -11,10 +11,11 @@ addpath(['D:\D\Alp\Master ODTÜ\Thesis\DOA\Codes\Direction-of-Arrival\' ...
 addpath(['D:\D\Alp\Master ODTÜ\Thesis\DOA\Codes\Direction-of-Arrival' ...
     '\Deep-Learning Basics on MATLAB\Custom Layers']);
 
-load Network_pt2.mat
+load MRA_Network_pt3.mat
 
 %% 
-sensor_locations = 0:10; % ULA with 11 sensors
+% sensor_locations = 0:10; % ULA with 11 sensors
+sensor_locations = [0 1 4 7 9]; % MRA with 5 sensors
 M = length(sensor_locations);
 N = sensor_locations(M) + 1;
 K = 3;          % # of sources
@@ -35,22 +36,24 @@ angle_spec = phi_min:delta_phi/10:phi_max;
 angle_spec2 = phi_min:delta_phi:phi_max;
 
 for epoch = 1:EPOCHS
+    % DOA Angles
     doa = DOA.DOA_Generate(K, phi_min, phi_max, 2 * delta_phi);
-    shuffledIndices = randperm(K);
-    doa = doa(shuffledIndices);
 
-    % s = [DOA.Coherent_Source_Generate(K_coherent, L);
-    %     DOA.Source_Generate(K - K_coherent, L)];
-    % shuffledIndices = randperm(K);
-    % s = s(shuffledIndices, :);
-    % A = DOA.Array_Manifold(sensor_locations, doa);
+    % Signals
+    vars = ones(K, 1);
+    vars(1:K_coherent) = [1; 0.75+0.25*rand(K_coherent-1, 1)];
+    s = DOA.Source_Generate_Final(K, K_coherent, L, vars);
+
+    % Array Manifold
+    A = DOA.Array_Manifold(sensor_locations, doa);
+
     for idx = 1:length(SNR_dB_vals)
         SNR_dB = SNR_dB_vals(idx);
-        % n = DOA.Noise_Generate(SNR_dB, M, L);
-        % y = A * s + n;
+        n = DOA.Noise_Generate(SNR_dB, M, L);
+        y = A * s + n;
 
-        Rs = DOA.Signal_Covariance(K, K_coherent);
-        y = DOA.Simulate_Environment(sensor_locations, doa, L, Rs, SNR_dB);
+        % Rs = DOA.Signal_Covariance(K, K_coherent);
+        % y = DOA.Simulate_Environment(sensor_locations, doa, L, Rs, SNR_dB);
 
         method = 1;
 
@@ -84,17 +87,18 @@ for epoch = 1:EPOCHS
         RMSE(method, idx) = RMSE(method, idx) + rmse(doa_est, doa);
         method = method + 1;
 
-        R_toeplitz = R_Toeplitz(Ry, "half");
+        % R_toeplitz = R_Toeplitz(Ry, "half"); % for ula
+        R_toeplitz = toeplitz(Virtual_Covariance_Column(DOA, Ry, sensor_locations)');
 
         % R_Toeplitz + MUSIC
-        spec = DOA.MUSIC(K, R_toeplitz, sensor_locations, angle_spec);
+        spec = DOA.MUSIC(K, R_toeplitz, 0:N-1, angle_spec);
         doa_est = DOA_Estimator(spec, angle_spec, K);
         doa_est = sort(doa_est);
         RMSE(method, idx) = RMSE(method, idx) + rmse(doa_est, doa);
         method = method + 1;
 
         % DL-Network
-        spec = Net_Function(net, M, R_toeplitz).';
+        spec = Net_Function(net, N, R_toeplitz).';
         doa_est = DOA_Estimator_Off_Grid(spec, angle_spec2);
         doa_est = sort(doa_est);
         RMSE(method, idx) = RMSE(method, idx) + rmse(doa_est, doa);
