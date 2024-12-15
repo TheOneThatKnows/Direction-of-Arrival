@@ -208,7 +208,10 @@ classdef FunctionsOfDOA
         end
 
         % Source Generate Final
-        function s = Source_Generate_Final(~, K, K_coherent, L, vars)
+        function s = Source_Generate_Final(~, K, K_coherent, L, vars, alpha)
+            if nargin == 5
+                alpha = [1; (0.75+0.25*rand(K_coherent-1, 1)) .* exp(1i * pi * rand(K_coherent-1, 1))];
+            end
             v = zeros(K, L);
             v(1:K_coherent, :) = ones(K_coherent, 1) * (randn(1, L) + 1i * randn(1, L));
             v(K_coherent+1:end, :) = randn(K-K_coherent, L) + 1i * randn(K-K_coherent, L);
@@ -217,7 +220,7 @@ classdef FunctionsOfDOA
             for i = 1:K
                 s(i, :) = s(i, :) / sqrt(var(s(i, :)));
             end
-            s = sqrt(vars) .* s;
+            s = [sqrt(vars(1)) * alpha; sqrt(vars(2:end))] .* s;
             shuffledInds = randperm(K);
             s = s(shuffledInds, :);
         end
@@ -559,6 +562,20 @@ classdef FunctionsOfDOA
                     row_init = (i-1) * r2 + 1;
                     row_end = i * r2;
                     X(row_init:row_end, j) = A1(i, j) * A2(:, j);
+                end
+            end
+        end
+
+        % Kronecker Product
+        function X = kronecker(~, A1, A2)
+            [r1, c1] = size(A1);
+            [r2, c2] = size(A2);
+            X = zeros(r1*r2, c1*c2);
+            for i = 1:r1
+                for j = 1:c1
+                    row_interval = (i-1)*r2+1:i*r2;
+                    col_interval = (j-1)*c2+1:j*c2;
+                    X(row_interval, col_interval) = A1(i, j) * A2;
                 end
             end
         end

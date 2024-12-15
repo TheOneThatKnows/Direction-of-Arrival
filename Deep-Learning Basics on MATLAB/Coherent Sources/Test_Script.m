@@ -25,6 +25,43 @@ Rs = [1 0.8 0; 0.8 0.64 0; 0 0 1];
 
 SNR_dB = 10;
 SNR = 10^(SNR_dB / 10);
+Ry = A * Rs * A' + (1 / SNR) * eye(M);
+Ry_toeplitz = R_Toeplitz(Ry, "full");
+Ry_incoherent = A * diag(diag(Rs)) * A' + (1 / SNR) * eye(M)
+
+[eig_vecs, eig_vals] = eig(Ry_incoherent, "vector");
+[eig_vals, sorted_inds] = sort(eig_vals, "descend");
+eig_vecs = eig_vecs(:, sorted_inds)
+
+eig_vecs(:, 1:K)' * eig_vecs(:, 1:K)
+
+%% 
+
+clear; clc; close all;
+addpath('D:\D\Alp\Master ODTÜ\Thesis\DOA\Codes\Direction-of-Arrival');
+DOA = FunctionsOfDOA();
+
+sensor_locations = 0:5; % ULA with 6 sensors
+
+M = length(sensor_locations);
+N = sensor_locations(M) + 1;
+
+K = 3;
+
+phi_min = 30;
+phi_max = 150;
+delta_phi = 1;
+
+angle_spec = phi_min:delta_phi:phi_max;
+
+doa = DOA.DOA_Generate(K, phi_min, phi_max, delta_phi);
+
+A = DOA.Array_Manifold(sensor_locations, doa);
+
+Rs = [1 0.8 0; 0.8 0.64 0; 0 0 1];
+
+SNR_dB = 10;
+SNR = 10^(SNR_dB / 10);
 Ry = A * Rs * A' + (1 / SNR) * eye(M)
 Ry_toeplitz = R_Toeplitz(Ry, "full")
 Ry_incoherent = A * diag(diag(Rs)) * A' + (1 / SNR) * eye(M)
