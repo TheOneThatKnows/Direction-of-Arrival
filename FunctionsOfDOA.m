@@ -216,7 +216,7 @@ classdef FunctionsOfDOA
             v(1:K_coherent, :) = ones(K_coherent, 1) * (randn(1, L) + 1i * randn(1, L));
             v(K_coherent+1:end, :) = randn(K-K_coherent, L) + 1i * randn(K-K_coherent, L);
 
-            s = real(v .* exp(1i * (2 * pi * 0.5 * (0:L-1))));
+            s = v .* exp(1i * (2 * pi * 0.5 * (0:L-1)));
             for i = 1:K
                 s(i, :) = s(i, :) / sqrt(var(s(i, :)));
             end
