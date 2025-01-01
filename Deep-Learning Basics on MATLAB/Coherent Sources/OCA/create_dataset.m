@@ -36,19 +36,27 @@ virtual_sensor_locations = virtual_sensor_locations(5:end);
 
 %% Prepare Dataset
 
-numOfData = 1200000;
+numOfData = 600000;
 feature = zeros(N, N, 2);
-features = zeros(N, N, 2, numOfData);
+
+% features = zeros(N, N, 2, numOfData);
+split_percentage = 0.7;
+XTrain = zeros(N, N, 2, round(numOfData * split_percentage));
+XValidation = zeros(N, N, 2, round(numOfData * (1 - split_percentage)));
 
 L = 70;        % # of snapshots
 phi_min = 30;
 phi_max = 150;
 delta_phi = 1;  % angle resolution
 Q = (phi_max - phi_min) / delta_phi + 1;
-labels = zeros(numOfData, 2*N-1);
+
+% labels = zeros(numOfData, 2*N-1);
+
+YTrain = zeros(round(numOfData * split_percentage), 2*N-1);
+YValidation = zeros(round(numOfData * split_percentage), 2*N-1);
 
 K = 5;
-for idx = 1:numOfData
+for idx = 1:size(YTrain, 1)
     K_coherent = randi(K);
     K_coherent = K_coherent * sign(K_coherent - 1);
 
@@ -76,7 +84,7 @@ for idx = 1:numOfData
     feature(:, :, 1) = real(R_norm);
     feature(:, :, 2) = imag(R_norm);
 
-    features(:, :, :, idx) = feature;
+    XTrain(:, :, :, idx) = feature;
 
     A2 = DOA.Array_Manifold(virtual_sensor_locations, doa);
     v = R_toeplitz(:, 1);
@@ -87,7 +95,53 @@ for idx = 1:numOfData
     Rs = ((A2' * A2) \ A2') * R_in * (A2 / (A2' * A2));
 
     A3 = DOA.Array_Manifold(0:N-1, doa);
-    R_out = A3 * diag(diag(Rs)) * A3';
+    % R_out = A3 * diag(diag(Rs)) * A3';
+    R_out = A3 * Rs * A3';
 
-    labels(idx, :) = [real(R_out(:, 1).') imag(R_out(2:end, 1).')];
+    YTrain(idx, :) = [real(R_out(:, 1).') imag(R_out(2:end, 1).')];
+end
+
+for idx = 1:size(YValidation, 1)
+    K_coherent = randi(K);
+    K_coherent = K_coherent * sign(K_coherent - 1);
+
+    doa = DOA.DOA_Generate(K, phi_min, phi_max, delta_phi);
+
+    % Array Manifold
+    A = DOA.Array_Manifold(sensor_locations_oca, doa);
+
+    % signal generate
+    vars = ones(K-(K_coherent-1)*sign(K_coherent), 1);
+    s = DOA.Source_Generate_Final(K, K_coherent, L, vars);
+
+    % noise generate
+    SNR_dB = -5 + sign(randi(3) - 2.5) * 5 + rand * 10;
+    n = DOA.Noise_Generate(SNR_dB, M, L);
+
+    % measurements
+    y = A * s + n;
+    R = (1 / L) * (y * y');
+
+    R_toeplitz = toeplitz(Virtual_Covariance_Column(DOA, R, sensor_locations_oca)');
+
+    R_norm = (R_toeplitz - mean(R_toeplitz(:))) / std(R_toeplitz(:));
+
+    feature(:, :, 1) = real(R_norm);
+    feature(:, :, 2) = imag(R_norm);
+
+    XValidation(:, :, :, idx) = feature;
+
+    A2 = DOA.Array_Manifold(virtual_sensor_locations, doa);
+    v = R_toeplitz(:, 1);
+    v = v(virtual_sensor_locations + 1);
+    R_in = toeplitz(v');
+
+    % incoherent source matrix
+    Rs = ((A2' * A2) \ A2') * R_in * (A2 / (A2' * A2));
+
+    A3 = DOA.Array_Manifold(0:N-1, doa);
+    % R_out = A3 * diag(diag(Rs)) * A3';
+    R_out = A3 * Rs * A3';
+
+    YValidation(idx, :) = [real(R_out(:, 1).') imag(R_out(2:end, 1).')];
 end

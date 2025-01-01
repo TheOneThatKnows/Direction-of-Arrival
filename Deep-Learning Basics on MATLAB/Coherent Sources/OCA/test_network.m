@@ -12,7 +12,7 @@ load Network_pt2.mat
 
 %% Test Case I
 
-[ss_crn, ss_music, angles] = Test(lgraph, DOA);
+[ss_crn, ss_music, angles] = Test(net, DOA);
 %%
 figure; hold on;
 plot(angles, ss_crn);
@@ -47,7 +47,7 @@ Q = (phi_max - phi_min) / delta_phi + 1;
 
 K = 5;
 K_coherent = randi(K);
-K_coherent = K_coherent * sign(K_coherent - 1);
+K_coherent = K_coherent * sign(K_coherent - 1)
 
 doa = DOA.DOA_Generate(K, phi_min, phi_max, delta_phi);
 
@@ -78,9 +78,13 @@ column1 = column1(:);
 column1 = column1(1:N) + 1i * [0; column1(N+1:end)];
 R_out = toeplitz(column1');
 
+v = R_toeplitz(:, 1);
+v = v(virtual_sensor_locations + 1);
+R_in = toeplitz(v');
+
 angle_spec = phi_min:delta_phi:phi_max;
 spatial_spectrum_1 = DOA.MUSIC(K, R_out, 0:N-1, angle_spec);
-spatial_spectrum_2 = DOA.MUSIC(K, R_toeplitz, virtual_sensor_locations, angle_spec);
+spatial_spectrum_2 = DOA.MUSIC(K, R_in, virtual_sensor_locations, angle_spec);
 
 figure; hold on;
 plot(angle_spec, 10*log10(spatial_spectrum_1));
