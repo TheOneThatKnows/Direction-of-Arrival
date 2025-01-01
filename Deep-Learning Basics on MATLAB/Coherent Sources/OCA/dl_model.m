@@ -2,6 +2,9 @@
 
 lgraph = [
     imageInputLayer([N N 2],"Normalization","none")
+    convolution2dLayer([12 12],128)
+    batchNormalizationLayer
+    reluLayer
     convolution2dLayer([4 4],128)
     batchNormalizationLayer
     reluLayer
@@ -12,13 +15,16 @@ lgraph = [
     batchNormalizationLayer
     reluLayer
     flattenLayer
-    fullyConnectedLayer(656)
+    fullyConnectedLayer(1024)
     reluLayer
     dropoutLayer(0.2)
-    fullyConnectedLayer(374)
+    fullyConnectedLayer(512)
     reluLayer
     dropoutLayer(0.2)
-    fullyConnectedLayer(213)
+    fullyConnectedLayer(256)
+    reluLayer
+    dropoutLayer(0.2)
+    fullyConnectedLayer(128)
     reluLayer
     dropoutLayer(0.2)
     fullyConnectedLayer(2*N-1)];
