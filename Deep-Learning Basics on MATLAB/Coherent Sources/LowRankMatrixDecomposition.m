@@ -58,7 +58,60 @@ for i = 1:N
     R(:, i) = z(start_idx:end_idx);
 end
 
-% The optimization starts here
+holes = [14 16 18 19];
+W = ones(N);
+for i = 1:N
+    for j = 1:N
+        diff = abs(i - j);
+        if ismember(diff, holes)
+            W(i, j) = 0;
+        end
+    end
+end
+
+% The optimization process starts here
+
+beta = 1;
+gamma = 0.5;
+d = 4; % # of columns in A and # of rows in B
+N_max = 10000;
+
+A_k1 = ones(N, d);
+B_k1 = ones(d, N);
+
+lambda_A = 0.0001;
+lambda_B = 0.0001;
+
+for idx = 1:N_max
+    A_k = A_k1;
+    B_k = B_k1;
+    % Update A
+    for i = 1:N
+        for j = 1:d
+            grad = -(W(i, :) .* (R(i, :) - A_k(i, :) * B_k)) * B_k(j, :).';
+            c = (A_k(i, j) - lambda_A * grad);
+            A_k1(i, j) = sign(c) * max(abs(c) - gamma * lambda_A, 0);
+        end
+    end
+    % Update B
+    for i = 1:d
+        for j = 1:N
+            grad = -(W(:, j) .* (R(:, j) - A_k1 * B_k(:, j))).' * A_k1(:, i);
+            B_k1(i, j) = (1 / (1 + gamma * lambda_B)) * (B_k(i, j) - lambda_B * grad);
+        end
+    end
+end
+
+X = A_k1 * B_k1; 
+
+%% Plot The Spatial Spectrum
+
+figure; 
+ss = DOA.MUSIC(K, X, 0:N-1, angle_spec);
+plot(angle_spec, 10*log10(ss));
+xlabel('angle range (deg)')
+ylabel('amplitude')
+title('Spatial Spectrum')
 
 %%
 
