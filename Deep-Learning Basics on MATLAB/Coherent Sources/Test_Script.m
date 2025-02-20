@@ -17,6 +17,17 @@ ula2 = 0:M1+1:(M2-1)*(M1+1);
 sensor_locations_na = [ula1 ula2+M1];
 sensor_locations_na(M1+2:end) = sensor_locations_na(M1+2:end) + 1
 
+virtula_sp = [0:13 15 17 20 21]
+
+M = length(virtula_sp);
+R = zeros(M);
+for i = 1:M
+    for j = 1:M
+        R(i, j) = virtula_sp(i) - virtula_sp(j);
+    end
+end
+R
+
 %% Delete
 
 clear; clc; close all;
@@ -29,7 +40,7 @@ sensor_locations = [0 1 4 7 9]; % SLA with 5 sensors
 M = length(sensor_locations);
 N = sensor_locations(M) + 1;
 
-K = 3;
+K = 2;
 K_coherent = 2;
 L = 70;
 
@@ -48,9 +59,12 @@ SNR_dB = 10;
 n = DOA.Noise_Generate(SNR_dB, M, L);
 
 y = A * s + n;
-Ry = (1 / L) * (y * y');
+Ry = A * [1 0; 0 1] * A';
 
-R_top = toeplitz(Virtual_Covariance_Column(DOA, Ry, sensor_locations));
+[a, b, c] = svd(Ry)
+[vec, val] = eig(Ry)
+
+% R_top = toeplitz(Virtual_Covariance_Column(DOA, Ry, sensor_locations));
 
 %%
 
