@@ -7,7 +7,7 @@
 %% Initialize
 
 clear; clc; close all;
-addpath('D:\D\Alp\Master ODTÜ\Thesis\DOA\Codes\Direction-of-Arrival');
+addpath('E:\Direction-of-Arrival');
 DOA = FunctionsOfDOA();
 
 %% Define The Sensor Array
