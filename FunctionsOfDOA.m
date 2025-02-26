@@ -60,6 +60,22 @@ classdef FunctionsOfDOA
             doa_est = sort(doa_est);
         end
 
+        % DOA Estimate
+        function doa_est = DOA_Estimate_Local(obj, spec, angle_spec, doa, local_delta)
+            delta_spec = angle_spec(2) - angle_spec(1);
+            doa_inds = round((doa - angle_spec(1)) / delta_spec) + 1;
+            local_delta = round(local_delta / delta_spec) + 1;
+            K = length(doa);
+            doa_est = zeros(1, K);
+            for i = 1:K
+                idx_min = max(1, doa_inds(i)-local_delta);
+                idx_max = min(length(spec), doa_inds(i)+local_delta);
+                
+                doa_est(i) = obj.DOA_Estimate(spec(idx_min:idx_max), angle_spec(idx_min:idx_max), 1);
+            end
+            doa_est = sort(doa_est);
+        end
+
         % Source Generate Old
         function s = Source_Generate_old(~, number_of_sources, number_of_snapshots, vars)
             if nargin == 3
@@ -603,6 +619,26 @@ classdef FunctionsOfDOA
                     diff_vector(idx2) = diff_vector(idx2) + 1;
                 end
             end
+        end
+
+        function R_fb = FBSS(~, R, L)
+            M = size(R, 1);
+            P = M - L + 1;
+
+            J = zeros(M);
+            for i = 1:M
+                J(i, M-i+1) = 1;
+            end
+
+            R_tilda = 0.5 * (R + J * R.' * J);
+
+            R_fb = zeros(L);
+            Z_eye = eye(M);
+            for p = 1:P
+                Z = Z_eye(:, p:p+L-1);
+                R_fb = R_fb + Z.' * R_tilda * Z;
+            end
+            R_fb = (1 / P) * R_fb;
         end
     end
 end

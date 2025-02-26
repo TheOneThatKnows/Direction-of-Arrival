@@ -18,10 +18,10 @@ function [W, u, R0] = solve_optimization(G, R_hat)
 
         % Objective function
         objective = (mu/(2*sqrt(N)))*(trace(W) + trace(toeplitz(u'))) + ...
-            0.5 * sum(sum((R0 .* G - R_hat) .* conj(R0 .* G - R_hat)))
+            0.5 * sum(sum((R0 .* G - R_hat) .* conj(R0 .* G - R_hat)));
             % 0.5*norm(R0 .* G - R_hat, 'fro')^2;
         
-        minimize(objective)
+        minimize(objective);
         
         % Constraints
         % Positive semidefinite constraint

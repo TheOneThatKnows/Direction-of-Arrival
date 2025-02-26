@@ -8,7 +8,7 @@ for i = 1:M
 end
 J
 
-R_tilda = 0.5 * (R + J * conj(R) * J);
+R_tilda = 0.5 * (R + J * R.' * J);
 
 R_fb = zeros(L);
 Z_eye = eye(M);

@@ -1,7 +1,7 @@
 from numpy import concatenate, argsort, sort, arange
 from numpy import zeros, ones, eye
 from numpy import pi, inf
-from numpy import abs, sign, mean, var, sqrt, cos, exp, conj, dot
+from numpy import abs, sign, mean, var, sqrt, cos, exp, conj, dot, round
 from numpy.random import randn, rand, random, permutation
 from numpy.linalg import eig, inv
 from scipy.linalg import toeplitz
@@ -41,6 +41,26 @@ def DOA_Estimate(spec, angle_spec, K):
 
     # Sort the DOA estimates
     doa_est = doa_est[:K]
+    doa_est = sort(doa_est)
+
+    return doa_est
+
+def DOA_Estimate_Local(spec, angle_spec, doa, local_delta):
+    delta_spec = angle_spec[1] - angle_spec[0]
+    doa_inds = round((doa - angle_spec[0]) / delta_spec)
+    local_delta = round(local_delta / delta_spec) + 1
+
+    # Initialize the DOA estimate array
+    K = len(doa)
+    doa_est = zeros(K)
+
+    for i in range(K):
+        ind_min = max(0, int(doa_inds[i]-local_delta))
+        ind_max = min(len(spec), int(doa_inds[i]+local_delta))
+
+        doa_est[i] = DOA_Estimate(spec[ind_min:ind_max], angle_spec[ind_min:ind_max], 1)[0]
+
+    # Sort the DOA estimates
     doa_est = sort(doa_est)
 
     return doa_est
